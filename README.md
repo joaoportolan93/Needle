@@ -1,43 +1,50 @@
-# Sonora - Music Streaming Application
+# Sonora
 
-Sonora is a modern music streaming application that allows users to discover new music, follow artists, create playlists, and share their music experiences with friends.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-- **Music Discovery**: Browse new releases and explore genres
-- **Artist Pages**: View artist information, albums, and popular tracks
-- **User Profiles**: Customize your profile and share your music taste
-- **Playlists**: Create and share personalized playlists
-- **Reviews**: Rate and review albums with a tagging system
-- **Social Features**: Share reviews and follow other users' activities
-- **Activity Feed**: Stay updated with friends' music activities
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Technologies Used
+## Expanding the ESLint configuration
 
-- Next.js
-- React
-- Tailwind CSS
-- Supabase
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
----
+- Configure the top-level `parserOptions` property like this:
 
-# Sonora - Aplicativo de Streaming de Música
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
 
-Sonora é um aplicativo moderno de streaming de música que permite aos usuários descobrir novas músicas, seguir artistas, criar playlists e compartilhar suas experiências musicais com amigos.
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
-## Funcionalidades
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
 
-- **Descoberta de Música**: Navegue por lançamentos recentes e explore gêneros
-- **Páginas de Artistas**: Visualize informações do artista, álbuns e faixas populares
-- **Perfis de Usuário**: Personalize seu perfil e compartilhe seu gosto musical
-- **Playlists**: Crie e compartilhe playlists personalizadas
-- **Avaliações**: Avalie e critique álbuns com um sistema de tags
-- **Recursos Sociais**: Compartilhe avaliações e siga atividades de outros usuários
-- **Feed de Atividades**: Mantenha-se atualizado com as atividades musicais dos amigos
-
-## Tecnologias Utilizadas
-
-- Next.js
-- React
-- Tailwind CSS
-- Supabase
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```
