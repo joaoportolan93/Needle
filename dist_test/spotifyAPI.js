@@ -10,8 +10,8 @@ exports.getSpotifyNewReleases = getSpotifyNewReleases;
 exports.getSpotifyCategories = getSpotifyCategories;
 exports.getSpotifyCategoryPlaylists = getSpotifyCategoryPlaylists;
 exports.getSpotifyTrackDetails = getSpotifyTrackDetails;
-const SPOTIFY_CLIENT_ID = "c1a33f5d7ac24544b4b6e931dfc7cfef"; // Substitua pelo seu Client ID
-const SPOTIFY_CLIENT_SECRET = "ca9aa91d8a584f66bd29960b75a502f7"; // Substitua pelo seu Client Secret
+const SPOTIFY_CLIENT_ID = "****************************"; // Substitua pelo seu Client ID
+const SPOTIFY_CLIENT_SECRET = "****************************"; // Substitua pelo seu Client Secret
 let accessToken = "";
 let tokenExpirationTime = 0;
 /**
