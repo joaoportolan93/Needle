@@ -1,1 +1,28 @@
+# Dependencies
 node_modules
+
+# Build output
+dist
+dist_test
+
+# Environment files (contain secrets!)
+.env
+backend/.env
+
+# Database files
+*.db
+
+# IDE
+.vscode
+.idea
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+*_test_results.txt

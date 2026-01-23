@@ -1,8 +1,7 @@
 // src/services/spotifyAPI.ts
+// VERSÃO SEGURA - O CLIENT_SECRET agora fica apenas no backend
 
-// Utiliza variáveis de ambiente para as credenciais
-const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 let accessToken = "";
 let tokenExpirationTime = 0;
@@ -10,15 +9,10 @@ let isRefreshingToken = false;
 let tokenRefreshPromise: Promise<string> | null = null;
 
 /**
- * Obtém um token de acesso da API do Spotify usando o fluxo de Client Credentials.
- * Gerencia o token em cache e sua expiração.
+ * Obtém um token de acesso da API do Spotify via proxy backend.
+ * O CLIENT_SECRET nunca é exposto no navegador!
  */
 async function getSpotifyAccessToken(forceRefresh = false): Promise<string> {
-    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
-        console.error("Client ID ou Client Secret do Spotify não configurados nas variáveis de ambiente.");
-        throw new Error("Credenciais do Spotify não configuradas.");
-    }
-    
     // Se o token é válido e não é forçada uma atualização, use o cache
     if (!forceRefresh && accessToken && Date.now() < tokenExpirationTime) {
         console.log("Usando token de acesso do Spotify em cache.");
@@ -31,20 +25,14 @@ async function getSpotifyAccessToken(forceRefresh = false): Promise<string> {
     }
 
     // Inicia processo de renovação do token
-    console.log("Obtendo novo token de acesso do Spotify...");
+    console.log("Obtendo novo token de acesso do Spotify via backend...");
     isRefreshingToken = true;
 
     // Armazena a promessa para que múltiplas chamadas utilizem a mesma
     tokenRefreshPromise = (async () => {
         try {
-            const response = await fetch("https://accounts.spotify.com/api/token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": "Basic " + btoa(SPOTIFY_CLIENT_ID + ":" + SPOTIFY_CLIENT_SECRET),
-                },
-                body: "grant_type=client_credentials",
-            });
+            // ✅ SEGURO: Chama o backend que tem o segredo protegido
+            const response = await fetch(`${API_URL}/api/spotify/token`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: response.statusText }));
@@ -55,7 +43,7 @@ async function getSpotifyAccessToken(forceRefresh = false): Promise<string> {
             const data = await response.json();
             accessToken = data.access_token;
             // Subtrai 5 minutos (300s) para renovar antes de expirar
-            tokenExpirationTime = Date.now() + (data.expires_in - 300) * 1000;
+            tokenExpirationTime = Date.now() + 50 * 60 * 1000; // 50 minutos
 
             console.log("Novo token de acesso do Spotify obtido com sucesso.");
             return accessToken;
@@ -79,7 +67,7 @@ async function getSpotifyAccessToken(forceRefresh = false): Promise<string> {
  */
 async function callSpotifyAPI(endpoint: string, method: string = "GET", body: any = null, retryCount = 0): Promise<any> {
     const maxRetries = 2; // Número máximo de tentativas
-    
+
     try {
         const token = await getSpotifyAccessToken();
         const headers: HeadersInit = {
@@ -100,22 +88,22 @@ async function callSpotifyAPI(endpoint: string, method: string = "GET", body: an
 
         if (!response.ok) {
             // Tenta extrair informações do erro
-            const errorData = await response.json().catch(() => ({ 
+            const errorData = await response.json().catch(() => ({
                 status: response.status,
-                message: response.statusText 
+                message: response.statusText
             }));
-            
+
             // Se for erro de autenticação e ainda não atingimos o limite de retries
             if (response.status === 401 && retryCount < maxRetries) {
                 console.warn(`Erro de autenticação na API do Spotify. Tentando renovar o token... (Tentativa ${retryCount + 1})`);
                 await getSpotifyAccessToken(true); // Força renovação do token
                 return callSpotifyAPI(endpoint, method, body, retryCount + 1);
             }
-            
+
             console.error(`Erro ao chamar API do Spotify (${endpoint}):`, errorData);
             throw new Error(`Falha na chamada à API do Spotify (${endpoint}): ${errorData.error?.message || errorData.message || response.statusText}`);
         }
-        
+
         if (response.status === 204) {
             return null;
         }
@@ -184,4 +172,3 @@ export async function getSpotifyTrackDetails(trackId: string) {
     }
     return callSpotifyAPI(`/v1/tracks/${trackId}`);
 }
-
