@@ -12,9 +12,9 @@ import ArtistPage from './pages/ArtistPage';
 function App() {
   return (
     <Router>
-      <div className="App bg-gray-800 text-white min-h-screen flex">
+      <div className="App min-h-screen flex flex-col lg:flex-row">
         <NavigationBar />
-        <main className="flex-1 ml-64 p-8"> {/* Add margin-left to account for sidebar and padding for content */}
+        <main className="flex-1 lg:ml-64 min-h-screen relative z-10 pb-20 lg:pb-0"> {/* Responsive: no margin on mobile, bottom padding for nav */}
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />

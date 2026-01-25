@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getSpotifyArtistDetails, getSpotifyArtistTopTracks, getSpotifyArtistAlbums } from '../services/spotifyAPI';
+import { getSpotifyArtistDetails, getSpotifyArtistTopTracks, getSpotifyArtistAlbums } from '../services/api';
 
 const ArtistPage = () => {
   const { id } = useParams();
@@ -83,9 +83,9 @@ const ArtistPage = () => {
 
       {/* Cabeçalho do Artista */}
       <div className="flex flex-col md:flex-row items-center md:items-start mb-8">
-        <img 
-          src={artist.images && artist.images[0] ? artist.images[0].url : `https://via.placeholder.com/300/1DB954/FFFFFF?text=${artist.name.charAt(0)}`} 
-          alt={artist.name} 
+        <img
+          src={artist.images && artist.images[0] ? artist.images[0].url : `https://via.placeholder.com/300/1DB954/FFFFFF?text=${artist.name.charAt(0)}`}
+          alt={artist.name}
           className="w-64 h-64 object-cover rounded-full mb-4 md:mb-0 md:mr-8"
         />
         <div className="text-center md:text-left">
@@ -99,10 +99,10 @@ const ArtistPage = () => {
           <p className="text-gray-400 mb-4">
             Seguidores: {artist.followers.total.toLocaleString()}
           </p>
-          <a 
-            href={artist.external_urls.spotify} 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            href={artist.external_urls.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
           >
             Abrir no Spotify
@@ -130,9 +130,9 @@ const ArtistPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-300">{index + 1}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       <div className="flex items-center">
-                        <img 
-                          src={track.album.images[2]?.url || `https://via.placeholder.com/40`} 
-                          alt={track.name} 
+                        <img
+                          src={track.album.images[2]?.url || `https://via.placeholder.com/40`}
+                          alt={track.name}
                           className="w-10 h-10 mr-3 rounded"
                         />
                         <div>
@@ -165,9 +165,9 @@ const ArtistPage = () => {
               <Link to={`/item/${album.id}`} key={album.id} className="block group">
                 <div className="bg-gray-800 p-3 rounded-lg shadow-lg transition duration-300 hover:bg-gray-700">
                   <div className="mb-3">
-                    <img 
-                      src={album.images[0]?.url || `https://via.placeholder.com/300`} 
-                      alt={album.name} 
+                    <img
+                      src={album.images[0]?.url || `https://via.placeholder.com/300`}
+                      alt={album.name}
                       className="w-full aspect-square object-cover rounded-md shadow-md"
                     />
                   </div>

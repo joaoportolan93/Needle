@@ -1,28 +1,24 @@
-# Dependencies
 node_modules
 
-# Build output
-dist
-dist_test
-
-# Environment files (contain secrets!)
+# Environment files - NEVER commit secrets!
 .env
 backend/.env
 
-# Database files
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+*.egg-info
+
+# SQLite database
 *.db
 
 # IDE
 .vscode
 .idea
 
-# OS generated
+# OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Test files
-*_test_results.txt

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { searchSpotify } from '../services/spotifyAPI'; // Ajuste o caminho se necessário
+import { searchSpotify } from '../services/api';
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,10 +56,10 @@ const SearchPage = () => {
         {items.map(item => {
           // Define a rota com base no tipo
           const route = type === 'Artistas' ? `/artist/${item.id}` : `/item/${item.id}`;
-          
+
           return (
             <Link to={route} key={item.id} className="bg-gray-800 p-3 rounded-lg shadow hover:bg-gray-700 transition-colors">
-              <img 
+              <img
                 src={item.images && item.images.length > 0 ? item.images[0].url : (item.album && item.album.images && item.album.images.length > 0 ? item.album.images[0].url : 'https://via.placeholder.com/150/14181C/E1E1E1?text=Capa')}
                 alt={`Capa de ${item.name}`}
                 className={`w-full h-40 object-cover rounded-md mb-2 ${type === 'Artistas' ? 'rounded-full' : ''}`}
@@ -98,7 +98,7 @@ const SearchPage = () => {
       {/* Filtros de Tabs */}
       <div className="flex space-x-2 mb-4 border-b border-gray-700">
         {['all', 'artists', 'albums', 'tracks'].map(filter => (
-          <button 
+          <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
             className={`py-2 px-4 font-medium text-sm rounded-t-md 
@@ -133,7 +133,7 @@ const SearchPage = () => {
         </div>
       )}
       {!debouncedTerm && !loading && (
-         <p className="text-gray-500 text-center mt-8">Digite algo para começar a busca.</p>
+        <p className="text-gray-500 text-center mt-8">Digite algo para começar a busca.</p>
       )}
     </div>
   );

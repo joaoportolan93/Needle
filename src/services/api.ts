@@ -1,229 +1,266 @@
-// src/services/api.ts
-// Service para comunicação com o backend Sonora
+/**
+ * Sonora API Service
+ * ===================
+ * Secure API client that communicates with the Python backend.
+ * All Spotify API calls are proxied through the backend to keep credentials safe.
+ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-// Token de autenticação
-let authToken: string | null = localStorage.getItem('sonora_token');
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
- * Define o token de autenticação
+ * Generic fetch wrapper with error handling
  */
-export function setAuthToken(token: string | null) {
-    authToken = token;
-    if (token) {
-        localStorage.setItem('sonora_token', token);
-    } else {
-        localStorage.removeItem('sonora_token');
-    }
-}
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
 
-/**
- * Retorna o token atual
- */
-export function getAuthToken(): string | null {
-    return authToken;
-}
-
-/**
- * Headers padrão para requests autenticadas
- */
-function getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-    };
-    if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-    }
-    return headers;
-}
-
-// ============================================
-// AUTH
-// ============================================
-
-export interface RegisterData {
-    username: string;
-    email: string;
-    password: string;
-}
-
-export interface LoginData {
-    email: string;
-    password: string;
-}
-
-export interface AuthResponse {
-    message: string;
-    user: {
-        id: number;
-        username: string;
-        email: string;
-        avatar_url?: string;
-    };
-    token: string;
-}
-
-export async function register(data: RegisterData): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(result.error || 'Erro ao registrar');
-    }
-
-    setAuthToken(result.token);
-    return result;
-}
-
-export async function login(data: LoginData): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(result.error || 'Erro ao fazer login');
-    }
-
-    setAuthToken(result.token);
-    return result;
-}
-
-export async function getCurrentUser() {
-    const response = await fetch(`${API_URL}/api/auth/me`, {
-        headers: getHeaders(),
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
     });
 
     if (!response.ok) {
-        throw new Error('Não autenticado');
+        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(error.detail || `HTTP error! status: ${response.status}`);
     }
 
     return response.json();
 }
 
-export function logout() {
-    setAuthToken(null);
+// ===================== Spotify Proxy Functions =====================
+
+/**
+ * Search for albums, artists, and tracks on Spotify
+ */
+export async function searchSpotify(
+    query: string,
+    types: string[] = ['album', 'artist', 'track'],
+    limit: number = 20,
+    offset: number = 0
+) {
+    const params = new URLSearchParams({
+        q: query,
+        type: types.join(','),
+        limit: limit.toString(),
+        offset: offset.toString(),
+    });
+
+    return fetchAPI(`/api/spotify/search?${params}`);
 }
 
-// ============================================
-// REVIEWS
-// ============================================
+/**
+ * Get new album releases from Spotify
+ */
+export async function getSpotifyNewReleases(limit: number = 20, offset: number = 0) {
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+    });
+
+    return fetchAPI(`/api/spotify/new-releases?${params}`);
+}
+
+/**
+ * Get Spotify categories
+ */
+export async function getSpotifyCategories(limit: number = 20, offset: number = 0) {
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+    });
+
+    return fetchAPI(`/api/spotify/categories?${params}`);
+}
+
+/**
+ * Get album details by Spotify ID
+ */
+export async function getSpotifyAlbumDetails(albumId: string) {
+    return fetchAPI(`/api/spotify/albums/${albumId}`);
+}
+
+/**
+ * Get artist details by Spotify ID
+ */
+export async function getSpotifyArtistDetails(artistId: string) {
+    return fetchAPI(`/api/spotify/artists/${artistId}`);
+}
+
+/**
+ * Get artist's top tracks
+ */
+export async function getSpotifyArtistTopTracks(artistId: string) {
+    return fetchAPI(`/api/spotify/artists/${artistId}/top-tracks`);
+}
+
+/**
+ * Get artist's albums
+ */
+export async function getSpotifyArtistAlbums(artistId: string, limit: number = 20) {
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+    });
+
+    return fetchAPI(`/api/spotify/artists/${artistId}/albums?${params}`);
+}
+
+/**
+ * Get track details by Spotify ID
+ */
+export async function getSpotifyTrackDetails(trackId: string) {
+    return fetchAPI(`/api/spotify/tracks/${trackId}`);
+}
+
+// ===================== Reviews API =====================
+
+export interface ReviewCreate {
+    album_spotify_id: string;
+    album_name: string;
+    album_artist: string;
+    album_cover_url?: string;
+    album_release_date?: string;
+    rating: number;
+    review_text?: string;
+    is_favorite?: boolean;
+}
+
+export interface ReviewUpdate {
+    rating?: number;
+    review_text?: string;
+    is_favorite?: boolean;
+}
 
 export interface Review {
     id: number;
     user_id: number;
-    spotify_album_id: string;
-    album_name: string;
-    album_artist: string;
-    album_cover_url: string | null;
+    album_spotify_id: string;
     rating: number;
-    review_text: string | null;
+    review_text?: string;
+    is_favorite: boolean;
     created_at: string;
     updated_at: string;
-    username?: string;
-    user_avatar?: string;
+    user?: {
+        id: number;
+        username: string;
+        avatar_url?: string;
+    };
+    album?: {
+        spotify_id: string;
+        name: string;
+        artist_name: string;
+        cover_url?: string;
+    };
 }
 
-export interface CreateReviewData {
-    spotify_album_id: string;
-    album_name: string;
-    album_artist: string;
-    album_cover_url?: string;
-    rating: number;
-    review_text?: string;
-}
+/**
+ * Create a new album review
+ */
+export async function createReview(review: ReviewCreate, userId: number = 1): Promise<Review> {
+    const params = new URLSearchParams({ user_id: userId.toString() });
 
-export interface UpdateReviewData {
-    rating?: number;
-    review_text?: string;
-}
-
-export async function getReviews(params?: { album_id?: string; user_id?: number; limit?: number; offset?: number }): Promise<{ reviews: Review[] }> {
-    const searchParams = new URLSearchParams();
-    if (params?.album_id) searchParams.set('album_id', params.album_id);
-    if (params?.user_id) searchParams.set('user_id', String(params.user_id));
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    if (params?.offset) searchParams.set('offset', String(params.offset));
-
-    const response = await fetch(`${API_URL}/api/reviews?${searchParams}`, {
-        headers: getHeaders(),
-    });
-
-    return response.json();
-}
-
-export async function getReview(id: number): Promise<{ review: Review }> {
-    const response = await fetch(`${API_URL}/api/reviews/${id}`, {
-        headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-        throw new Error('Review não encontrada');
-    }
-
-    return response.json();
-}
-
-export async function createReview(data: CreateReviewData): Promise<{ message: string; review: Review }> {
-    const response = await fetch(`${API_URL}/api/reviews`, {
+    return fetchAPI(`/api/reviews?${params}`, {
         method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
+        body: JSON.stringify(review),
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(result.error || 'Erro ao criar review');
-    }
-
-    return result;
 }
 
-export async function updateReview(id: number, data: UpdateReviewData): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/api/reviews/${id}`, {
+/**
+ * Get all reviews for a specific album
+ */
+export async function getAlbumReviews(
+    albumId: string,
+    limit: number = 20,
+    offset: number = 0
+): Promise<Review[]> {
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+    });
+
+    return fetchAPI(`/api/reviews/album/${albumId}?${params}`);
+}
+
+/**
+ * Get all reviews by a specific user
+ */
+export async function getUserReviews(
+    userId: number,
+    limit: number = 20,
+    offset: number = 0
+): Promise<Review[]> {
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+    });
+
+    return fetchAPI(`/api/reviews/user/${userId}?${params}`);
+}
+
+/**
+ * Get a specific review by ID
+ */
+export async function getReview(reviewId: number): Promise<Review> {
+    return fetchAPI(`/api/reviews/${reviewId}`);
+}
+
+/**
+ * Update an existing review
+ */
+export async function updateReview(
+    reviewId: number,
+    update: ReviewUpdate,
+    userId: number = 1
+): Promise<Review> {
+    const params = new URLSearchParams({ user_id: userId.toString() });
+
+    return fetchAPI(`/api/reviews/${reviewId}?${params}`, {
         method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
+        body: JSON.stringify(update),
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(result.error || 'Erro ao atualizar review');
-    }
-
-    return result;
 }
 
-export async function deleteReview(id: number): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/api/reviews/${id}`, {
+/**
+ * Delete a review
+ */
+export async function deleteReview(reviewId: number, userId: number = 1): Promise<void> {
+    const params = new URLSearchParams({ user_id: userId.toString() });
+
+    return fetchAPI(`/api/reviews/${reviewId}?${params}`, {
         method: 'DELETE',
-        headers: getHeaders(),
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(result.error || 'Erro ao deletar review');
-    }
-
-    return result;
 }
 
-export async function getAlbumStats(spotifyAlbumId: string): Promise<{ stats: { total_reviews: number; average_rating: number | null; min_rating: number | null; max_rating: number | null } }> {
-    const response = await fetch(`${API_URL}/api/reviews/album/${spotifyAlbumId}/stats`, {
-        headers: getHeaders(),
-    });
+/**
+ * Get recent reviews across all albums
+ */
+export async function getRecentReviews(limit: number = 10): Promise<Review[]> {
+    const params = new URLSearchParams({ limit: limit.toString() });
 
-    return response.json();
+    return fetchAPI(`/api/reviews/recent?${params}`);
+}
+
+// ===================== Album Stats =====================
+
+export interface AlbumStats {
+    album_id: string;
+    review_count: number;
+    average_rating: number;
+}
+
+/**
+ * Get statistics for an album (average rating, review count)
+ */
+export async function getAlbumStats(albumId: string): Promise<AlbumStats> {
+    return fetchAPI(`/api/stats/album/${albumId}`);
+}
+
+// ===================== Health Check =====================
+
+/**
+ * Check if the backend API is running
+ */
+export async function checkHealth(): Promise<{ status: string; message: string }> {
+    return fetchAPI('/api/health');
 }

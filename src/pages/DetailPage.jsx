@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getSpotifyAlbumDetails, getSpotifyArtistDetails, getSpotifyTrackDetails } from '../services/spotifyAPI';
+import { getSpotifyAlbumDetails, getSpotifyArtistDetails, getSpotifyTrackDetails } from '../services/api';
 import ShareButtons from '../components/ShareButtons';
 
 const DetailPage = () => {
@@ -20,7 +20,7 @@ const DetailPage = () => {
 
   // Lista de tags pré-definidas
   const predefinedTags = [
-    "Relaxante", "Enérgico", "Melancólico", "Feliz", "Nostálgico", "Dançante", 
+    "Relaxante", "Enérgico", "Melancólico", "Feliz", "Nostálgico", "Dançante",
     "Instrumental", "Acústico", "Eletrônico", "Jazz", "Rock", "Pop", "Hip-Hop",
     "Clássico", "Indie", "Folk", "R&B", "Soul", "Metal", "Alternativo"
   ];
@@ -80,7 +80,7 @@ const DetailPage = () => {
   const loadUserReview = (itemId) => {
     const reviewKey = `sonora-review-${itemId}`;
     const savedReview = localStorage.getItem(reviewKey);
-    
+
     if (savedReview) {
       try {
         const reviewData = JSON.parse(savedReview);
@@ -106,11 +106,11 @@ const DetailPage = () => {
       itemId: id,
       itemType: type,
       itemName: itemDetails.name,
-      itemArtist: type === 'album' || type === 'track' 
-        ? itemDetails.artists.map(artist => artist.name).join(', ') 
+      itemArtist: type === 'album' || type === 'track'
+        ? itemDetails.artists.map(artist => artist.name).join(', ')
         : '',
-      itemCoverUrl: itemDetails.images && itemDetails.images.length > 0 
-        ? itemDetails.images[0].url 
+      itemCoverUrl: itemDetails.images && itemDetails.images.length > 0
+        ? itemDetails.images[0].url
         : '',
       rating: userRating,
       reviewText,
@@ -126,7 +126,7 @@ const DetailPage = () => {
     // Atualizar a UI
     loadReviews(id);
     setShowReviewForm(false);
-    
+
     // Também salvar na lista de itens avaliados pelo usuário
     const userReviewsKey = 'sonora-user-reviews';
     let userReviews = JSON.parse(localStorage.getItem(userReviewsKey) || '[]');
@@ -155,11 +155,11 @@ const DetailPage = () => {
         id,
         type,
         name: itemDetails.name,
-        artist: type === 'album' || type === 'track' 
-          ? itemDetails.artists.map(artist => artist.name).join(', ') 
+        artist: type === 'album' || type === 'track'
+          ? itemDetails.artists.map(artist => artist.name).join(', ')
           : '',
-        coverUrl: itemDetails.images && itemDetails.images.length > 0 
-          ? itemDetails.images[0].url 
+        coverUrl: itemDetails.images && itemDetails.images.length > 0
+          ? itemDetails.images[0].url
           : '',
         addedAt: new Date().toISOString()
       });
@@ -181,11 +181,11 @@ const DetailPage = () => {
         id,
         type,
         name: itemDetails.name,
-        artist: type === 'album' || type === 'track' 
-          ? itemDetails.artists.map(artist => artist.name).join(', ') 
+        artist: type === 'album' || type === 'track'
+          ? itemDetails.artists.map(artist => artist.name).join(', ')
           : '',
-        coverUrl: itemDetails.images && itemDetails.images.length > 0 
-          ? itemDetails.images[0].url 
+        coverUrl: itemDetails.images && itemDetails.images.length > 0
+          ? itemDetails.images[0].url
           : '',
         addedAt: new Date().toISOString()
       });
@@ -235,7 +235,7 @@ const DetailPage = () => {
         </div>
       );
     }
-    
+
     // Mensagem de erro genérica para outros casos
     return (
       <div className="p-4 text-center">
@@ -259,8 +259,8 @@ const DetailPage = () => {
   }
 
   // Calcular a média das avaliações
-  const averageRating = reviews.length > 0 
-    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) 
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : null;
 
   return (
@@ -272,37 +272,37 @@ const DetailPage = () => {
       {/* Detalhes do Item (Álbum/Artista) */}
       <div className="flex flex-col md:flex-row mb-8">
         <div className="md:w-1/3 mb-4 md:mb-0 md:mr-6">
-          <img 
-            src={itemDetails.images && itemDetails.images.length > 0 
-              ? itemDetails.images[0].url 
-              : `https://via.placeholder.com/300/1DB954/FFFFFF?text=${itemDetails.name.charAt(0)}`} 
-            alt={itemDetails.name} 
+          <img
+            src={itemDetails.images && itemDetails.images.length > 0
+              ? itemDetails.images[0].url
+              : `https://via.placeholder.com/300/1DB954/FFFFFF?text=${itemDetails.name.charAt(0)}`}
+            alt={itemDetails.name}
             className="w-full rounded-lg shadow-lg"
           />
-          
+
           {/* Botões de ação */}
           <div className="mt-4 flex flex-col space-y-2">
-            <a 
-              href={itemDetails.external_urls?.spotify} 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href={itemDetails.external_urls?.spotify}
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center"
             >
               Abrir no Spotify
             </a>
-            <button 
+            <button
               onClick={addToFavorites}
               className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center"
             >
               <span>♥ Adicionar aos Favoritos</span>
             </button>
-            <button 
+            <button
               onClick={addToWatchlist}
               className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center"
             >
               <span>➕ Adicionar à lista "Quero Ouvir"</span>
             </button>
-            <button 
+            <button
               onClick={() => setShowReviewForm(!showReviewForm)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center"
             >
@@ -313,7 +313,7 @@ const DetailPage = () => {
 
         <div className="md:w-2/3">
           <h1 className="text-3xl font-bold mb-2">{itemDetails.name}</h1>
-          
+
           {type === 'album' && (
             <>
               <p className="text-xl text-gray-300 mb-4">
@@ -392,13 +392,13 @@ const DetailPage = () => {
           {showReviewForm && (
             <div className="mt-8 bg-gray-900 p-6 rounded-lg">
               <h2 className="text-xl font-semibold mb-4">Avaliar {itemDetails.name}</h2>
-              
+
               <div className="mb-4">
                 <label className="block text-gray-300 mb-2">Sua Avaliação:</label>
                 <div className="flex text-3xl text-yellow-400 mb-2">
                   {[1, 2, 3, 4, 5].map(star => (
-                    <button 
-                      key={star} 
+                    <button
+                      key={star}
                       onClick={() => setUserRating(star)}
                       className="focus:outline-none transition-all duration-150"
                     >
@@ -407,55 +407,54 @@ const DetailPage = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-gray-300 mb-2">Data em que ouviu:</label>
-                <input 
-                  type="date" 
-                  value={listenDate} 
+                <input
+                  type="date"
+                  value={listenDate}
                   onChange={(e) => setListenDate(e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-gray-300 mb-2">Seu Review:</label>
-                <textarea 
-                  value={reviewText} 
+                <textarea
+                  value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Escreva seus pensamentos sobre este álbum..."
                   className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white h-32"
                 ></textarea>
               </div>
-              
+
               <div className="mb-6">
                 <label className="block text-gray-300 mb-2">Tags:</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {predefinedTags.map(tag => (
-                    <button 
+                    <button
                       key={tag}
                       onClick={() => handleTagClick(tag)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        selectedTags.includes(tag) 
-                          ? 'bg-green-600 text-white' 
+                      className={`px-3 py-1 rounded-full text-sm ${selectedTags.includes(tag)
+                          ? 'bg-green-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
+                        }`}
                     >
                       {tag}
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="flex">
-                  <input 
-                    type="text" 
-                    value={customTag} 
+                  <input
+                    type="text"
+                    value={customTag}
                     onChange={(e) => setCustomTag(e.target.value)}
                     placeholder="Adicionar tag personalizada"
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-l p-2 text-white"
                     onKeyPress={(e) => e.key === 'Enter' && addCustomTag()}
                   />
-                  <button 
+                  <button
                     onClick={addCustomTag}
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r"
                   >
@@ -463,15 +462,15 @@ const DetailPage = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex justify-end">
-                <button 
+                <button
                   onClick={() => setShowReviewForm(false)}
                   className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mr-2"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={saveReview}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                 >
@@ -480,12 +479,12 @@ const DetailPage = () => {
               </div>
             </div>
           )}
-          
+
           {/* Avaliações da Comunidade */}
           {reviews.length > 0 && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold mb-4 border-b border-gray-700 pb-2">Avaliações da Comunidade</h2>
-              
+
               <div className="space-y-4">
                 {reviews.map(review => (
                   <div key={review.id} className="bg-gray-900 p-4 rounded-lg">
@@ -497,17 +496,17 @@ const DetailPage = () => {
                         {new Date(review.date).toLocaleDateString()}
                       </div>
                     </div>
-                    
+
                     {review.listenDate && (
                       <div className="text-sm text-gray-400 mb-2">
                         Ouvido em: {new Date(review.listenDate).toLocaleDateString()}
                       </div>
                     )}
-                    
+
                     {review.reviewText && (
                       <p className="mb-3">{review.reviewText}</p>
                     )}
-                    
+
                     {review.tags && review.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
                         {review.tags.map(tag => (
@@ -521,10 +520,10 @@ const DetailPage = () => {
                     {/* Adicionar botões de compartilhamento */}
                     <div className="pt-3 border-t border-gray-800">
                       <p className="text-xs text-gray-400 mb-2">Compartilhar esta avaliação:</p>
-                      <ShareButtons 
-                        title={`Review: ${itemDetails.name}`} 
-                        description={`Confira minha avaliação de ${itemDetails.name} (${review.rating}/5 estrelas) no Sonora App!`} 
-                        url={`${window.location.origin}/item/${id}?review=${review.id}`} 
+                      <ShareButtons
+                        title={`Review: ${itemDetails.name}`}
+                        description={`Confira minha avaliação de ${itemDetails.name} (${review.rating}/5 estrelas) no Sonora App!`}
+                        url={`${window.location.origin}/item/${id}?review=${review.id}`}
                       />
                     </div>
                   </div>
