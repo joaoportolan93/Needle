@@ -1,8 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .font-review {
+    font-family: 'Lora', serif, bold;
+  }
+}
+
 @layer base {
+
+  /* ===== LIGHT MODE (default) ===== */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -26,18 +36,15 @@
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  body {
-    @apply bg-gradient-radial-top from-indigo-900 via-[#0a0a16] to-[#05050a] text-foreground min-h-screen font-sans antialiased;
-  }
-
+  /* ===== DARK MODE ===== */
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -66,5 +73,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen font-sans antialiased;
+  }
+
+  /* Dark mode background gradient */
+  .dark body {
+    background: radial-gradient(ellipse at top, #312e81, #0a0a16, #05050a);
   }
 }

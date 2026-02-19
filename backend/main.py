@@ -12,8 +12,11 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 from database import get_db, engine, Base
+from auth import get_current_user
 import models, schemas
 from spotify_service import spotify_service
+from routers import users as users_router
+from routers import lists as lists_router
 
 load_dotenv()
 
@@ -40,6 +43,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routers
+app.include_router(users_router.router)
+app.include_router(lists_router.router)
 
 
 # ===================== Health Check =====================
@@ -176,16 +183,16 @@ def get_or_create_album(db: Session, review_data: schemas.ReviewCreate) -> model
 async def create_review(
     review: schemas.ReviewCreate,
     db: Session = Depends(get_db),
-    # TODO: Add authentication dependency
-    user_id: int = Query(default=1, description="Temporary: User ID (replace with auth)")
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Create a new album review.
     A user can only have one review per album.
+    Requires authentication.
     """
     # Check if review already exists for this user and album
     existing = db.query(models.Review).filter(
-        models.Review.user_id == user_id,
+        models.Review.user_id == current_user.id,
         models.Review.album_spotify_id == review.album_spotify_id
     ).first()
     
@@ -200,11 +207,12 @@ async def create_review(
     
     # Create review
     db_review = models.Review(
-        user_id=user_id,
+        user_id=current_user.id,
         album_spotify_id=review.album_spotify_id,
         rating=review.rating,
         review_text=review.review_text,
-        is_favorite=review.is_favorite
+        is_favorite=review.is_favorite,
+        listened_on=review.listened_on,
     )
     db.add(db_review)
     db.commit()
@@ -263,16 +271,15 @@ async def update_review(
     review_id: int,
     review_update: schemas.ReviewUpdate,
     db: Session = Depends(get_db),
-    # TODO: Add authentication dependency
-    user_id: int = Query(default=1, description="Temporary: User ID (replace with auth)")
+    current_user: models.User = Depends(get_current_user),
 ):
-    """Update an existing review. Only the review owner can update it."""
+    """Update an existing review. Only the review owner can update it. Requires authentication."""
     review = db.query(models.Review).filter(models.Review.id == review_id).first()
     
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
     
-    if review.user_id != user_id:
+    if review.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only update your own reviews")
     
     # Update only provided fields
@@ -290,16 +297,15 @@ async def update_review(
 async def delete_review(
     review_id: int,
     db: Session = Depends(get_db),
-    # TODO: Add authentication dependency
-    user_id: int = Query(default=1, description="Temporary: User ID (replace with auth)")
+    current_user: models.User = Depends(get_current_user),
 ):
-    """Delete a review. Only the review owner can delete it."""
+    """Delete a review. Only the review owner can delete it. Requires authentication."""
     review = db.query(models.Review).filter(models.Review.id == review_id).first()
     
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
     
-    if review.user_id != user_id:
+    if review.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own reviews")
     
     db.delete(review)
@@ -332,12 +338,112 @@ async def get_recent_reviews(
     limit: int = Query(default=10, ge=1, le=50),
     db: Session = Depends(get_db)
 ):
-    """Get the most recent reviews across all albums."""
-    reviews = db.query(models.Review).order_by(
-        models.Review.created_at.desc()
-    ).limit(limit).all()
-    
-    return reviews
+    """Get the most recent reviews across all albums, with user and album details."""
+    from sqlalchemy.orm import joinedload
+
+    reviews = (
+        db.query(models.Review)
+        .options(
+            joinedload(models.Review.user),
+            joinedload(models.Review.album),
+        )
+        .order_by(models.Review.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    results = []
+    for review in reviews:
+        results.append(schemas.ReviewResponse(
+            id=review.id,
+            user_id=review.user_id,
+            album_spotify_id=review.album_spotify_id,
+            rating=review.rating,
+            review_text=review.review_text,
+            is_favorite=review.is_favorite,
+            listened_on=review.listened_on,
+            created_at=review.created_at,
+            updated_at=review.updated_at,
+            likes_count=0,
+            user=schemas.UserResponse(
+                id=review.user.id,
+                username=review.user.username,
+                email=review.user.email,
+                avatar_url=review.user.avatar_url,
+                bio=review.user.bio,
+                theme_preference=review.user.theme_preference,
+                created_at=review.user.created_at,
+            ) if review.user else None,
+            album=schemas.AlbumResponse(
+                spotify_id=review.album.spotify_id,
+                name=review.album.name,
+                artist_name=review.album.artist_name,
+                cover_url=review.album.cover_url,
+                release_date=review.album.release_date,
+                cached_at=review.album.cached_at,
+            ) if review.album else None,
+        ))
+
+    return results
+
+
+@app.get("/api/feed", response_model=List[schemas.ReviewResponse], tags=["Feed"])
+async def get_activity_feed(
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db)
+):
+    """
+    Global activity feed: most recent reviews with user and album details.
+    Used by the homepage community feed.
+    """
+    from sqlalchemy.orm import joinedload
+
+    reviews = (
+        db.query(models.Review)
+        .options(
+            joinedload(models.Review.user),
+            joinedload(models.Review.album),
+        )
+        .order_by(models.Review.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    results = []
+    for review in reviews:
+        results.append(schemas.ReviewResponse(
+            id=review.id,
+            user_id=review.user_id,
+            album_spotify_id=review.album_spotify_id,
+            rating=review.rating,
+            review_text=review.review_text,
+            is_favorite=review.is_favorite,
+            listened_on=review.listened_on,
+            created_at=review.created_at,
+            updated_at=review.updated_at,
+            likes_count=0,
+            user=schemas.UserResponse(
+                id=review.user.id,
+                username=review.user.username,
+                email=review.user.email,
+                avatar_url=review.user.avatar_url,
+                bio=review.user.bio,
+                theme_preference=review.user.theme_preference,
+                created_at=review.user.created_at,
+            ) if review.user else None,
+            album=schemas.AlbumResponse(
+                spotify_id=review.album.spotify_id,
+                name=review.album.name,
+                artist_name=review.album.artist_name,
+                cover_url=review.album.cover_url,
+                release_date=review.album.release_date,
+                cached_at=review.album.cached_at,
+            ) if review.album else None,
+        ))
+
+    return results
 
 
 if __name__ == "__main__":

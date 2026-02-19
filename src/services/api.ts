@@ -13,10 +13,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    // Attach JWT token if present
+    const token = localStorage.getItem('token');
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            ...authHeaders,
             ...options.headers,
         },
     });
@@ -264,3 +272,160 @@ export async function getAlbumStats(albumId: string): Promise<AlbumStats> {
 export async function checkHealth(): Promise<{ status: string; message: string }> {
     return fetchAPI('/api/health');
 }
+
+// ===================== Auth API =====================
+
+/**
+ * Login user — backend expects JSON {email, password}
+ */
+export async function loginUser(email: string, password: string): Promise<{ access_token: string; token_type: string; theme_preference: string; user: any }> {
+    return fetchAPI('/api/users/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    });
+}
+
+/**
+ * Register a new user
+ */
+export async function registerUser(userData: { username: string; email: string; password: string }) {
+    return fetchAPI('/api/users/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+    });
+}
+
+/**
+ * Get current authenticated user
+ */
+export async function getMe() {
+    return fetchAPI('/api/users/me');
+}
+
+/**
+ * Update user settings (avatar, bio, theme)
+ */
+export async function updateUserSettings(data: { avatar_url?: string; bio?: string; theme_preference?: string }) {
+    return fetchAPI('/api/users/settings', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+// ===================== Public Profiles =====================
+
+export interface UserProfile {
+    id: number;
+    username: string;
+    email: string;
+    avatar_url?: string;
+    bio?: string;
+    theme_preference: string;
+    created_at: string;
+    followers_count: number;
+    following_count: number;
+    reviews_count: number;
+}
+
+/**
+ * Get public profile of a user by username
+ */
+export async function getUserProfile(username: string): Promise<UserProfile> {
+    return fetchAPI(`/api/users/${username}`);
+}
+
+// ===================== Lists API =====================
+
+export interface ListItem {
+    id: number;
+    list_id: number;
+    album_spotify_id: string;
+    position: number;
+    description?: string;
+    added_at: string;
+    album?: {
+        spotify_id: string;
+        name: string;
+        artist_name: string;
+        cover_url?: string;
+        release_date?: string;
+    };
+}
+
+export interface UserList {
+    id: number;
+    user_id: number;
+    title: string;
+    description?: string;
+    is_public: boolean;
+    created_at: string;
+    updated_at: string;
+    items_count: number;
+    items: ListItem[];
+    user?: {
+        id: number;
+        username: string;
+        avatar_url?: string;
+    };
+}
+
+/**
+ * Get all public lists (community browse)
+ */
+export async function getPublicLists(limit: number = 20, offset: number = 0): Promise<UserList[]> {
+    const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
+    return fetchAPI(`/api/lists?${params}`);
+}
+
+/**
+ * Get lists by a specific user
+ */
+export async function getUserLists(userId: number, limit: number = 20): Promise<UserList[]> {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    return fetchAPI(`/api/lists/user/${userId}?${params}`);
+}
+
+/**
+ * Get a single list with all items
+ */
+export async function getListDetail(listId: number): Promise<UserList> {
+    return fetchAPI(`/api/lists/${listId}`);
+}
+
+/**
+ * Create a new list (requires auth)
+ */
+export async function createList(data: { title: string; description?: string; is_public?: boolean }): Promise<UserList> {
+    return fetchAPI('/api/lists', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+/**
+ * Add an album item to a list (requires auth)
+ */
+export async function addListItem(listId: number, data: { album_spotify_id: string; position?: number; description?: string }): Promise<ListItem> {
+    return fetchAPI(`/api/lists/${listId}/items`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+/**
+ * Delete a list (requires auth)
+ */
+export async function deleteList(listId: number): Promise<void> {
+    return fetchAPI(`/api/lists/${listId}`, { method: 'DELETE' });
+}
+
+// ===================== Activity Feed =====================
+
+/**
+ * Get the global activity feed (recent reviews with user + album data)
+ */
+export async function getActivityFeed(limit: number = 20, offset: number = 0): Promise<Review[]> {
+    const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
+    return fetchAPI(`/api/feed?${params}`);
+}
+

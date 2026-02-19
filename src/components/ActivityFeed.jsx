@@ -1,17 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import ReviewCard from './ReviewCard';
+import { useAuth } from '../contexts/AuthContext';
+import { getActivityFeed } from '../services/api';
 
 const ActivityFeed = () => {
+  const { user: currentUser } = useAuth();
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Carrega todas as avaliações e ordena por data
-    const loadActivities = () => {
+    const loadActivities = async () => {
       setIsLoading(true);
+
+      try {
+        // Try fetching from backend API first (includes bot users + all DB reviews)
+        const feedData = await getActivityFeed(15);
+
+        if (feedData && feedData.length > 0) {
+          // Transform API data to match ReviewCard's expected shape
+          const transformed = feedData.map(review => ({
+            id: `api-${review.id}`,
+            type: 'review',
+            itemId: review.album_spotify_id,
+            itemName: review.album?.name || 'Álbum',
+            itemArtist: review.album?.artist_name || '',
+            itemCoverUrl: review.album?.cover_url,
+            rating: review.rating,
+            reviewText: review.review_text,
+            activityDate: new Date(review.created_at),
+            user: {
+              username: review.user?.username,
+              avatar: review.user?.avatar_url,
+              avatar_url: review.user?.avatar_url,
+              name: review.user?.username,
+            },
+            likes: review.likes_count || 0,
+            comments: 0,
+          }));
+          setActivities(transformed);
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.log('Feed API não disponível, usando dados locais:', err.message);
+      }
+
+      // Fallback: load from localStorage (same as before)
       const allActivities = [];
 
-      // Carregar avaliações
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('sonora-review-')) {
@@ -21,7 +57,11 @@ const ActivityFeed = () => {
               allActivities.push({
                 ...reviewData,
                 type: 'review',
-                activityDate: new Date(reviewData.date)
+                activityDate: new Date(reviewData.date),
+                user: reviewData.user || {
+                  username: currentUser?.username,
+                  avatar: currentUser?.avatar_url,
+                },
               });
             }
           } catch (error) {
@@ -30,7 +70,6 @@ const ActivityFeed = () => {
         }
       }
 
-      // Carregar favoritos
       const favorites = JSON.parse(localStorage.getItem('sonora-favorites') || '[]');
       favorites.forEach(favorite => {
         allActivities.push({
@@ -40,11 +79,11 @@ const ActivityFeed = () => {
           itemName: favorite.name,
           itemArtist: favorite.artist,
           itemCoverUrl: favorite.coverUrl,
-          activityDate: new Date(favorite.addedAt)
+          activityDate: new Date(favorite.addedAt),
+          user: { username: currentUser?.username, avatar: currentUser?.avatar_url },
         });
       });
 
-      // Carregar watchlist
       const watchlist = JSON.parse(localStorage.getItem('sonora-watchlist') || '[]');
       watchlist.forEach(item => {
         allActivities.push({
@@ -54,25 +93,58 @@ const ActivityFeed = () => {
           itemName: item.name,
           itemArtist: item.artist,
           itemCoverUrl: item.coverUrl,
-          activityDate: new Date(item.addedAt)
+          activityDate: new Date(item.addedAt),
+          user: { username: currentUser?.username, avatar: currentUser?.avatar_url },
         });
       });
 
-      // Ordenar por data (mais recente primeiro)
       allActivities.sort((a, b) => b.activityDate - a.activityDate);
-      
-      // Pegar os 10 mais recentes
-      setActivities(allActivities.slice(0, 10));
+
+      // Mock data if nothing exists
+      if (allActivities.length === 0) {
+        allActivities.push(
+          {
+            id: 'mock-1',
+            type: 'review',
+            itemId: 'mock-album-1',
+            itemName: 'Wuthering Heights',
+            itemArtist: 'Kate Bush',
+            itemCoverUrl: 'https://i.scdn.co/image/ab67616d0000b2738b7447db378b27c622a8677c',
+            rating: 5,
+            reviewText: "Emily Brontë died of tuberculosis 177 years ago yet this adaptation is still the worst thing that has ever happened to her.",
+            activityDate: new Date(),
+            user: { name: "allain", avatar: "https://i.pravatar.cc/150?u=allain" },
+            likes: 47458,
+            comments: 124,
+          },
+          {
+            id: 'mock-2',
+            type: 'review',
+            itemId: 'mock-album-2',
+            itemName: 'The Dark Side of the Moon',
+            itemArtist: 'Pink Floyd',
+            itemCoverUrl: 'https://i.scdn.co/image/ab67616d0000b27329188d3e9c402123d8c1be1a',
+            rating: 5,
+            reviewText: "There is no dark side of the moon really. Matter of fact it's all dark.",
+            activityDate: new Date('2025-04-10'),
+            user: { name: "PortoGraffitti", avatar: "https://i.pravatar.cc/150?u=porno" },
+            likes: 120,
+            comments: 4,
+          }
+        );
+      }
+
+      setActivities(allActivities.slice(0, 15));
       setIsLoading(false);
     };
 
     loadActivities();
-  }, []);
+  }, [currentUser]);
 
   if (isLoading) {
     return (
       <div className="py-4 text-center">
-        <p>Carregando atividades...</p>
+        <p className="text-muted-foreground">Carregando atividades...</p>
       </div>
     );
   }
@@ -80,71 +152,18 @@ const ActivityFeed = () => {
   if (activities.length === 0) {
     return (
       <div className="py-4 text-center">
-        <p>Nenhuma atividade encontrada. Comece a avaliar músicas e álbuns!</p>
+        <p className="text-muted-foreground">Nenhuma atividade encontrada. Comece a avaliar músicas e álbuns!</p>
       </div>
     );
   }
 
-  const getActivityText = (activity) => {
-    switch (activity.type) {
-      case 'review':
-        return `Avaliou ${activity.itemName} com ${activity.rating} estrelas`;
-      case 'favorite':
-        return `Adicionou ${activity.itemName} aos favoritos`;
-      case 'watchlist':
-        return `Adicionou ${activity.itemName} à lista "Quero Ouvir"`;
-      default:
-        return '';
-    }
-  };
-
   return (
     <div className="space-y-4">
       {activities.map(activity => (
-        <div key={activity.id} className="bg-gray-800 p-4 rounded-lg shadow flex">
-          <Link to={`/item/${activity.itemId}`} className="shrink-0">
-            <img 
-              src={activity.itemCoverUrl || `https://via.placeholder.com/60`} 
-              alt={activity.itemName} 
-              className="w-16 h-16 rounded mr-4 object-cover"
-            />
-          </Link>
-          
-          <div className="flex-grow">
-            <p className="font-medium">
-              <span className="text-green-400">Usuário Sonora</span> {getActivityText(activity)}
-            </p>
-            
-            <div className="flex items-center mt-1">
-              <Link to={`/item/${activity.itemId}`} className="text-gray-300 hover:text-white hover:underline">
-                {activity.itemName}
-              </Link>
-              <span className="mx-1 text-gray-500">•</span>
-              <span className="text-gray-400">{activity.itemArtist}</span>
-            </div>
-            
-            {activity.type === 'review' && activity.reviewText && (
-              <p className="text-gray-300 mt-2 text-sm italic">"{activity.reviewText.substring(0, 100)}{activity.reviewText.length > 100 ? '...' : ''}"</p>
-            )}
-            
-            {activity.type === 'review' && activity.tags && activity.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {activity.tags.map(tag => (
-                  <span key={tag} className="px-2 py-0.5 bg-gray-700 rounded-full text-xs text-gray-300">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <div className="text-right shrink-0 text-sm text-gray-500">
-            {new Date(activity.activityDate).toLocaleDateString()}
-          </div>
-        </div>
+        <ReviewCard key={activity.id} activity={activity} />
       ))}
     </div>
   );
 };
 
-export default ActivityFeed; 
+export default ActivityFeed;

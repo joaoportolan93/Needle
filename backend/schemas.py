@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation.
 """
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -22,13 +22,24 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     avatar_url: Optional[str] = None
     bio: Optional[str] = Field(None, max_length=500)
+    theme_preference: Optional[str] = Field(None, max_length=20)
 
 
 class UserResponse(UserBase):
     id: int
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
+    theme_preference: str = "dark"
     created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileResponse(UserResponse):
+    """Extended user response with social counts for profile pages."""
+    followers_count: int = 0
+    following_count: int = 0
+    reviews_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -56,9 +67,10 @@ class AlbumResponse(AlbumBase):
 # ============== Review Schemas ==============
 
 class ReviewBase(BaseModel):
-    rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5 stars")
+    rating: Optional[float] = Field(None, ge=0.5, le=5.0, description="Rating from 0.5 to 5 stars")
     review_text: Optional[str] = Field(None, max_length=5000)
     is_favorite: bool = False
+    listened_on: Optional[datetime] = None
 
 
 class ReviewCreate(ReviewBase):
@@ -71,9 +83,10 @@ class ReviewCreate(ReviewBase):
 
 
 class ReviewUpdate(BaseModel):
-    rating: Optional[int] = Field(None, ge=1, le=5)
+    rating: Optional[float] = Field(None, ge=0.5, le=5.0)
     review_text: Optional[str] = Field(None, max_length=5000)
     is_favorite: Optional[bool] = None
+    listened_on: Optional[datetime] = None
 
 
 class ReviewResponse(ReviewBase):
@@ -82,6 +95,7 @@ class ReviewResponse(ReviewBase):
     album_spotify_id: str
     created_at: datetime
     updated_at: datetime
+    likes_count: int = 0
     # Include user info
     user: Optional[UserResponse] = None
     # Include album info
@@ -102,6 +116,75 @@ class ReviewWithAlbum(ReviewBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ============== Follow Schemas ==============
+
+class FollowResponse(BaseModel):
+    follower_id: int
+    followed_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============== Review Like Schemas ==============
+
+class ReviewLikeResponse(BaseModel):
+    user_id: int
+    review_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============== Custom List Schemas ==============
+
+class ListItemBase(BaseModel):
+    album_spotify_id: str
+    position: int = 0
+    description: Optional[str] = None
+
+
+class ListItemCreate(ListItemBase):
+    pass
+
+
+class ListItemResponse(ListItemBase):
+    id: int
+    list_id: int
+    added_at: datetime
+    album: Optional[AlbumResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserListBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    is_public: bool = True
+
+
+class UserListCreate(UserListBase):
+    pass
+
+
+class UserListUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+
+class UserListResponse(UserListBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    items_count: int = 0
+    items: List[ListItemResponse] = []
+    user: Optional[UserResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ============== Auth Schemas ==============
 
 class Token(BaseModel):
@@ -116,6 +199,21 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class LoginResponse(Token):
+    """Login response with token, user data, and theme for immediate frontend use."""
+    theme_preference: str = "dark"
+    user: UserResponse
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserSettingsUpdate(BaseModel):
+    """Schema for updating account settings (bio, avatar, theme)."""
+    bio: Optional[str] = Field(None, max_length=500)
+    avatar_url: Optional[str] = None
+    theme_preference: Optional[str] = Field(None, max_length=20)
 
 
 # ============== Spotify Proxy Schemas ==============
