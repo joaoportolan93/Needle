@@ -365,10 +365,9 @@ async def get_recent_reviews(
             created_at=review.created_at,
             updated_at=review.updated_at,
             likes_count=0,
-            user=schemas.UserResponse(
+            user=schemas.PublicUserResponse(
                 id=review.user.id,
                 username=review.user.username,
-                email=review.user.email,
                 avatar_url=review.user.avatar_url,
                 bio=review.user.bio,
                 theme_preference=review.user.theme_preference,
@@ -424,10 +423,9 @@ async def get_activity_feed(
             created_at=review.created_at,
             updated_at=review.updated_at,
             likes_count=0,
-            user=schemas.UserResponse(
+            user=schemas.PublicUserResponse(
                 id=review.user.id,
                 username=review.user.username,
-                email=review.user.email,
                 avatar_url=review.user.avatar_url,
                 bio=review.user.bio,
                 theme_preference=review.user.theme_preference,

@@ -26,6 +26,7 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(UserBase):
+    """Full user data — only for authenticated endpoints (e.g. /me, /settings)."""
     id: int
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
@@ -35,8 +36,20 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserProfileResponse(UserResponse):
-    """Extended user response with social counts for profile pages."""
+class PublicUserResponse(BaseModel):
+    """User data without email — safe for public endpoints (feed, lists, profiles)."""
+    id: int
+    username: str
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    theme_preference: str = "dark"
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileResponse(PublicUserResponse):
+    """Extended public user response with social counts for profile pages."""
     followers_count: int = 0
     following_count: int = 0
     reviews_count: int = 0
@@ -96,8 +109,8 @@ class ReviewResponse(ReviewBase):
     created_at: datetime
     updated_at: datetime
     likes_count: int = 0
-    # Include user info
-    user: Optional[UserResponse] = None
+    # Include user info (without email for privacy)
+    user: Optional[PublicUserResponse] = None
     # Include album info
     album: Optional[AlbumResponse] = None
 
@@ -180,7 +193,7 @@ class UserListResponse(UserListBase):
     updated_at: datetime
     items_count: int = 0
     items: List[ListItemResponse] = []
-    user: Optional[UserResponse] = None
+    user: Optional[PublicUserResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 

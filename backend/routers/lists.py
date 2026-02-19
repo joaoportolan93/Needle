@@ -65,10 +65,9 @@ async def get_public_lists(
                 )
                 for item in lst.items
             ],
-            user=schemas.UserResponse(
+            user=schemas.PublicUserResponse(
                 id=lst.user.id,
                 username=lst.user.username,
-                email=lst.user.email,
                 avatar_url=lst.user.avatar_url,
                 bio=lst.user.bio,
                 theme_preference=lst.user.theme_preference,
@@ -134,10 +133,9 @@ async def get_user_lists(
                 )
                 for item in lst.items
             ],
-            user=schemas.UserResponse(
+            user=schemas.PublicUserResponse(
                 id=lst.user.id,
                 username=lst.user.username,
-                email=lst.user.email,
                 avatar_url=lst.user.avatar_url,
                 bio=lst.user.bio,
                 theme_preference=lst.user.theme_preference,
@@ -196,10 +194,9 @@ async def get_list_detail(list_id: int, db: Session = Depends(get_db)):
             )
             for item in lst.items
         ],
-        user=schemas.UserResponse(
+        user=schemas.PublicUserResponse(
             id=lst.user.id,
             username=lst.user.username,
-            email=lst.user.email,
             avatar_url=lst.user.avatar_url,
             bio=lst.user.bio,
             theme_preference=lst.user.theme_preference,
@@ -237,10 +234,9 @@ async def create_list(
         updated_at=db_list.updated_at,
         items_count=0,
         items=[],
-        user=schemas.UserResponse(
+        user=schemas.PublicUserResponse(
             id=current_user.id,
             username=current_user.username,
-            email=current_user.email,
             avatar_url=current_user.avatar_url,
             bio=current_user.bio,
             theme_preference=current_user.theme_preference,

@@ -15,6 +15,10 @@ venv
 # SQLite database
 *.db
 
+# Build & dist
+dist
+dist_test
+
 # IDE
 .vscode
 .idea
@@ -22,3 +26,6 @@ venv
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
