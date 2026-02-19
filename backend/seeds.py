@@ -3,50 +3,89 @@ Seed script for Sonora database.
 Creates realistic bot users, album cache entries, reviews, and curated lists.
 Run: python seeds.py
 """
+import asyncio
 import random
+import os
+import httpx
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 from database import SessionLocal, engine, Base
 from auth import hash_password
 import models
+
+load_dotenv()
+
+async def get_spotify_token() -> str:
+    """Get a Spotify API token using Client Credentials flow."""
+    client_id = os.getenv("SPOTIFY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        return None
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://accounts.spotify.com/api/token",
+            data={"grant_type": "client_credentials"},
+            auth=(client_id, client_secret),
+        )
+        if response.status_code == 200:
+            return response.json()["access_token"]
+    return None
+
+async def fetch_cover_url(token: str, spotify_id: str) -> str:
+    """Fetch album cover URL from Spotify API."""
+    if not token:
+        return None
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.spotify.com/v1/albums/{spotify_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"market": "BR"},
+        )
+        if response.status_code == 200:
+            images = response.json().get("images", [])
+            if images:
+                return images[0]["url"]  # largest image
+    return None
+
 
 # ===================== Seed Albums =====================
 # Real albums from the user's playlists + classic placeholders
 
 SEED_ALBUMS = [
     # Vibes part I
-    {"spotify_id": "5EzDhyVKteSxPGbcP0MNiA", "name": "BALLADS 1", "artist": "Joji", "cover_url": "https://i.scdn.co/image/ab67616d0000b273f8e43213b9bbb1e9ee3132af", "release_date": "2018-10-26"},
-    {"spotify_id": "3ShSHhniOtu1hc6w4OAfNB", "name": "Nectar", "artist": "Joji", "cover_url": "https://i.scdn.co/image/ab67616d0000b27378e787a51d4e36c0c1c65eb8", "release_date": "2020-09-25"},
-    {"spotify_id": "0C6NLOdVWQ7e3UzH7j3eeV", "name": "i am > i was", "artist": "21 Savage", "cover_url": "https://i.scdn.co/image/ab67616d0000b273c45f858ec3892d7d4e3a3c79", "release_date": "2018-12-21"},
-    {"spotify_id": "6ocxMCJSMokUFw5BiTKSMB", "name": "AmarElo", "artist": "Emicida", "cover_url": "https://i.scdn.co/image/ab67616d0000b2738bd416ec07b45e5f0e38bb6a", "release_date": "2019-10-30"},
-    {"spotify_id": "2Ti79nwTsont5ZHfdxIzAm", "name": "?", "artist": "XXXTENTACION", "cover_url": "https://i.scdn.co/image/ab67616d0000b273806c160566580d6d0485550d", "release_date": "2018-03-16"},
-    {"spotify_id": "5bBYWJhLvZ2G9fDECGSBaB", "name": "17", "artist": "XXXTENTACION", "cover_url": "https://i.scdn.co/image/ab67616d0000b2732f3a8e77f7aba16a1d4b0768", "release_date": "2017-08-25"},
+    {"spotify_id": "5mIImcsuqpiSXg8XvFr81I", "name": "BALLADS 1", "artist": "Joji", "cover_url": "https://i.scdn.co/image/ab67616d0000b2734cc52cd7a712842234e4fce2", "release_date": "2018-10-26"},
+    {"spotify_id": "6gJ8VKn5PAFcCIVaf3B2uE", "name": "Nectar", "artist": "Joji", "cover_url": "https://i.scdn.co/image/ab67616d0000b273f733e50079838090eebc3fe4", "release_date": "2020-09-25"},
+    {"spotify_id": "007DWn799UWvfY1wwZeENR", "name": "i am > i was", "artist": "21 Savage", "cover_url": "https://i.scdn.co/image/ab67616d0000b2731afd2e526e3723dd4a9fb4c8", "release_date": "2018-12-21"},
+    {"spotify_id": "5cUY5chmS86cdonhoFdn8h", "name": "AmarElo", "artist": "Emicida", "cover_url": "https://i.scdn.co/image/ab67616d0000b273856b38f6f4209513625d087d", "release_date": "2019-10-30"},
+    {"spotify_id": "2Ti79nwTsont5ZHfdxIzAm", "name": "?", "artist": "XXXTENTACION", "cover_url": "https://i.scdn.co/image/ab67616d0000b273806c160566580d6335d1f16c", "release_date": "2018-03-16"},
+    {"spotify_id": "5VdyJkLe3yvOs0l4xXbWp0", "name": "17", "artist": "XXXTENTACION", "cover_url": "https://i.scdn.co/image/ab67616d0000b273203c89bd4391468eea4cc3f5", "release_date": "2017-08-25"},
     {"spotify_id": "4g1ZRSBuWGhKidaJFlYbje", "name": "Hollywood's Bleeding", "artist": "Post Malone", "cover_url": "https://i.scdn.co/image/ab67616d0000b2739478c87599550dd73bfa1b04", "release_date": "2019-09-06"},
-    {"spotify_id": "6trNtQUgC8cgbWcqoMYkOR", "name": "beerbongs & bentleys", "artist": "Post Malone", "cover_url": "https://i.scdn.co/image/ab67616d0000b27395e5b5ba8fde1a06e7560899", "release_date": "2018-04-27"},
+    {"spotify_id": "6trNtQUgC8cgbWcqoMYkOR", "name": "beerbongs & bentleys", "artist": "Post Malone", "cover_url": "https://i.scdn.co/image/ab67616d0000b273b1c4b76e23414c9f20242268", "release_date": "2018-04-27"},
     # Vibes part II
-    {"spotify_id": "5ht6gDP1z6bVpXy4hKI17N", "name": "SYRE", "artist": "Jaden", "cover_url": "https://i.scdn.co/image/ab67616d0000b2730f94056c7e96e7e80f1a4f41", "release_date": "2017-11-17"},
-    {"spotify_id": "4EKqTLh2eyxOKOY7kGI7Mh", "name": "Samba Esquema Novo", "artist": "Jorge Ben Jor", "cover_url": "https://i.scdn.co/image/ab67616d0000b2732e481e1a7e3ab488c7c6b1d2", "release_date": "1963-01-01"},
-    {"spotify_id": "1Py2SluTSBQ9qTxfT7y0EH", "name": "Cru", "artist": "Seu Jorge", "cover_url": "https://i.scdn.co/image/ab67616d0000b27364a5f3d47f48f5399c50b72c", "release_date": "2005-01-01"},
-    {"spotify_id": "5fmIolIOsVaIVkTGzJZVHO", "name": "French Exit", "artist": "TV Girl", "cover_url": "https://i.scdn.co/image/ab67616d0000b273f2e3f5e1c23053a4e2b1a5ef", "release_date": "2014-08-21"},
+    {"spotify_id": "4IFpj2jyRcugt1yzH82m3E", "name": "SYRE", "artist": "Jaden", "cover_url": "https://i.scdn.co/image/ab67616d0000b2736aafb01504b69173c877bdca", "release_date": "2017-11-17"},
+    {"spotify_id": "3xWp6y0HGsHZlXljNs7VRy", "name": "Samba Esquema Novo", "artist": "Jorge Ben Jor", "cover_url": "https://i.scdn.co/image/ab67616d0000b2732daa87c238a78a680511da3c", "release_date": "1963-01-01"},
+    {"spotify_id": "6KFJoqStaKw7VRMmoh1d6j", "name": "Cru", "artist": "Seu Jorge", "cover_url": "https://i.scdn.co/image/ab67616d0000b27348fd36a5f603cf1cfbd8128e", "release_date": "2005-01-01"},
+    {"spotify_id": "4Hai0uVzRbyTSaTPzxTY4e", "name": "French Exit", "artist": "TV Girl", "cover_url": "https://i.scdn.co/image/ab67616d0000b273e1bc1af856b42dd7fdba9f84", "release_date": "2014-08-21"},
     # Vibes part III
-    {"spotify_id": "3HHNR44YbP7XogYdivVadR", "name": "Austin", "artist": "Post Malone", "cover_url": "https://i.scdn.co/image/ab67616d0000b2738b6cd164a03bfb8e8f5b7a98", "release_date": "2023-07-28"},
-    {"spotify_id": "6JeoPC8u9sDjjlfeS8f1yr", "name": "Landmarks", "artist": "Hollow Coves", "cover_url": "https://i.scdn.co/image/ab67616d0000b2734c9c06f7f39f3ebd1e8c3b4a", "release_date": "2022-03-04"},
-    {"spotify_id": "2kJVdmxl5n4gZwvcpMCOh5", "name": "Veneer", "artist": "José González", "cover_url": "https://i.scdn.co/image/ab67616d0000b273893489768d0f39a6fbb4c1b3", "release_date": "2003-01-01"},
-    {"spotify_id": "3BPp3OZi3YMhq5TuDnzzv2", "name": "An Awesome Wave", "artist": "alt-J", "cover_url": "https://i.scdn.co/image/ab67616d0000b273ba25899acf0be0fb6c2d26f5", "release_date": "2012-05-25"},
-    {"spotify_id": "0FKKHT0YrfxKm9JIdUclDd", "name": "I'm Wide Awake, It's Morning", "artist": "Bright Eyes", "cover_url": "https://i.scdn.co/image/ab67616d0000b273e2db76c8a66a37d9b1e08b2e", "release_date": "2005-01-25"},
-    {"spotify_id": "2aOD4fxfHpxh6JwJuUTZvV", "name": "If You Leave", "artist": "Daughter", "cover_url": "https://i.scdn.co/image/ab67616d0000b2738b7b0ee68db2a0e84b0e6d27", "release_date": "2013-03-18"},
-    {"spotify_id": "1M0L8FxbEsPdFXVYMUjvEa", "name": "Not to Disappear", "artist": "Daughter", "cover_url": "https://i.scdn.co/image/ab67616d0000b273e1f1f8cd6a8e8a9ed25fd6e2", "release_date": "2016-01-15"},
-    {"spotify_id": "4PMqSO8JJaJdIAFQeGmoQ3", "name": "Evergreen", "artist": "BROODS", "cover_url": "https://i.scdn.co/image/ab67616d0000b273c3e93ebb07891a8346b8a2a5", "release_date": "2014-08-22"},
-    {"spotify_id": "5Dbfp8uL5sA4jOT0pR9D9P", "name": "Down the Way", "artist": "Angus & Julia Stone", "cover_url": "https://i.scdn.co/image/ab67616d0000b273ff6e0e84db2a1f6dbf7c2dba", "release_date": "2010-03-05"},
-    {"spotify_id": "0dJ06GfEjR7PWR1c0TUbCv", "name": "My Love Is Cool", "artist": "Wolf Alice", "cover_url": "https://i.scdn.co/image/ab67616d0000b2733c46a5f28b700ec939d147a8", "release_date": "2015-06-22"},
+    {"spotify_id": "6r1lh7fHMB499vGKtIyJLy", "name": "Austin", "artist": "Post Malone", "cover_url": "https://i.scdn.co/image/ab67616d0000b27371cae34ad5a39bdab78af13e", "release_date": "2023-07-28"},
+    {"spotify_id": "6JeoPC8u9sDjjlfeS8f1yr", "name": "Landmarks", "artist": "Hollow Coves", "cover_url": "https://i.scdn.co/image/ab67616d0000b27339f867a6a9a9e9f2614b3a42", "release_date": "2022-03-04"},
+    {"spotify_id": "0PtqooT6O0E1uyizFZevFY", "name": "Veneer", "artist": "José González", "cover_url": "https://i.scdn.co/image/ab67616d0000b27376557bf2d3926bf5a607cd92", "release_date": "2003-01-01"},
+    {"spotify_id": "6HbJlAnTRhWae1F3lEwGkv", "name": "An Awesome Wave", "artist": "alt-J", "cover_url": "https://i.scdn.co/image/ab67616d0000b2731e1ca90cd8fdbb0ac890a926", "release_date": "2012-05-25"},
+    {"spotify_id": "6MwSuZphL6GmuSVIYUGUF7", "name": "I'm Wide Awake, It's Morning", "artist": "Bright Eyes", "cover_url": "https://i.scdn.co/image/ab67616d0000b2738eded59eb143ee6000a77c62", "release_date": "2005-01-25"},
+    {"spotify_id": "74ShfU6i2GfPyqwdc5uGl7", "name": "If You Leave", "artist": "Daughter", "cover_url": "https://i.scdn.co/image/ab67616d0000b273f9e7f5cc42ac959998ca90ee", "release_date": "2013-03-18"},
+    {"spotify_id": "2vRh4R0ACSdHA5WORLP3Zg", "name": "Not to Disappear", "artist": "Daughter", "cover_url": "https://i.scdn.co/image/ab67616d0000b2732b39f574d17e45fad82194f0", "release_date": "2016-01-15"},
+    {"spotify_id": "0HrAEwPOV0brDG0wvTWXUB", "name": "Evergreen", "artist": "BROODS", "cover_url": "https://i.scdn.co/image/ab67616d0000b2734016d72958f2aa2b00df37bf", "release_date": "2014-08-22"},
+    {"spotify_id": "78BXB0tWspQKtatJK5DTXZ", "name": "Down the Way", "artist": "Angus & Julia Stone", "cover_url": "https://i.scdn.co/image/ab67616d0000b27334a4ab124ec70f633f23a891", "release_date": "2010-03-05"},
+    {"spotify_id": "2L82g2rqAlNBcADFzayJBU", "name": "My Love Is Cool", "artist": "Wolf Alice", "cover_url": "https://i.scdn.co/image/ab67616d0000b2731355ee57ae4c00720f7dacee", "release_date": "2015-06-22"},
     # Rodeo trip
-    {"spotify_id": "18NOKLkZETa4sWwLMIm0UZ", "name": "UTOPIA", "artist": "Travis Scott", "cover_url": "https://i.scdn.co/image/ab67616d0000b273881d8d8378cd01099babcd44", "release_date": "2023-07-28"},
-    {"spotify_id": "41GuZcammIkupMPKH2OJ6I", "name": "Astroworld", "artist": "Travis Scott", "cover_url": "https://i.scdn.co/image/ab67616d0000b273072e9faef2ef7b6db63834a3", "release_date": "2018-08-03"},
-    {"spotify_id": "1Sf5md0IPb7bMJa4XRPXMI", "name": "HEROES & VILLAINS", "artist": "Metro Boomin & Future", "cover_url": "https://i.scdn.co/image/ab67616d0000b2732081e3aec15d3eb96565e982", "release_date": "2022-12-02"},
-    {"spotify_id": "3Gs8NhyoNpkEMmKkfV0Y7D", "name": "Over It", "artist": "Summer Walker", "cover_url": "https://i.scdn.co/image/ab67616d0000b27377fdcfda6535601aff081b6a", "release_date": "2019-10-04"},
-    {"spotify_id": "2E8r3bwdQGyOPGLzrhHSaL", "name": "Make It Big", "artist": "Wham!", "cover_url": "https://i.scdn.co/image/ab67616d0000b273d73fd9d15tried18b89d6d6b5", "release_date": "1984-10-23"},
-    # Classics placeholders
-    {"spotify_id": "4LH4d3cOWNNsVw41Gqt2kv", "name": "The Dark Side of the Moon", "artist": "Pink Floyd", "cover_url": "https://i.scdn.co/image/ab67616d0000b273ea7caaff71dea1051d49b2fe", "release_date": "1973-03-01"},
-    {"spotify_id": "6dVIqQ8qmQ5GBnJ9shOYGE", "name": "OK Computer", "artist": "Radiohead", "cover_url": "https://i.scdn.co/image/ab67616d0000b273c8b444df094c181e82df0ee0", "release_date": "1997-05-21"},
+    {"spotify_id": "18NOKLkZETa4sWwLMIm0UZ", "name": "UTOPIA", "artist": "Travis Scott", "cover_url": "https://i.scdn.co/image/ab67616d0000b27304481c826dd292e5e4983b3f", "release_date": "2023-07-28"},
+    {"spotify_id": "41GuZcammIkupMPKH2OJ6I", "name": "Astroworld", "artist": "Travis Scott", "cover_url": "https://i.scdn.co/image/ab67616d0000b273daec894c14c0ca42d76eeb32", "release_date": "2018-08-03"},
+    {"spotify_id": "7txGsnDSqVMoRl6RQ9XyZP", "name": "HEROES & VILLAINS", "artist": "Metro Boomin & Future", "cover_url": "https://i.scdn.co/image/ab67616d0000b273c4fee55d7b51479627c31f89", "release_date": "2022-12-02"},
+    {"spotify_id": "1qgJNWnPIeK9rx7hF8JCPK", "name": "Over It", "artist": "Summer Walker", "cover_url": "https://i.scdn.co/image/ab67616d0000b27393e2baf7cebd1613156afd60", "release_date": "2019-10-04"},
+    {"spotify_id": "02f3y3NTsddjdUMoNiBppI", "name": "Make It Big", "artist": "Wham!", "cover_url": "https://i.scdn.co/image/ab67616d0000b273a2fc41b0dd6ce4f0d16a4c46", "release_date": "1984-10-23"},
+    # Classics
+    {"spotify_id": "4LH4d3cOWNNsVw41Gqt2kv", "name": "The Dark Side of the Moon", "artist": "Pink Floyd", "cover_url": "https://i.scdn.co/image/ab67616d0000b273db216ca805faf5fe35df4ee6", "release_date": "1973-03-01"},
+    {"spotify_id": "6dVIqQ8qmQ5GBnJ9shOYGE", "name": "OK Computer", "artist": "Radiohead", "cover_url": "https://i.scdn.co/image/ab67616d0000b273c8b444df094279e70d0ed856", "release_date": "1997-05-21"},
     {"spotify_id": "4eLPsYPBmXABThSJ821sqY", "name": "DAMN.", "artist": "Kendrick Lamar", "cover_url": "https://i.scdn.co/image/ab67616d0000b2738b52c6b9bc4e43d873869699", "release_date": "2017-04-14"},
 ]
 
@@ -282,49 +321,70 @@ SEED_LISTS = [
 
 # ===================== Main Seed Function =====================
 
-def seed_database():
+async def seed_database():
     """Populate database with realistic seed data."""
-    print("🌱 Starting database seeding...")
+    print("Starting database seeding...")
+
+    # Get Spotify token to fetch real covers
+    print("Connecting to Spotify API to fetch real album covers...")
+    token = await get_spotify_token()
+    if token:
+        print("   Spotify API connected!")
+    else:
+        print("   WARNING: Could not connect to Spotify API. Using placeholder covers.")
 
     # Reset tables
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
     try:
-        # Check if seed data already exists
+        # Clear old seed users (cascades to reviews, lists)
         existing_bots = db.query(models.User).filter(
             models.User.email.like("%@seedbot.needle")
         ).count()
         if existing_bots > 0:
-            print("⚠️  Seed data already exists. Clearing old seed data...")
-            # Delete old seed users (cascades to reviews, lists)
+            print("Clearing old seed data...")
             db.query(models.User).filter(
                 models.User.email.like("%@seedbot.needle")
             ).delete(synchronize_session=False)
             db.commit()
 
-        # --- 1. Create Albums ---
-        print("📀 Creating album cache entries...")
-        album_map = {}  # name -> spotify_id
-        for album_data in SEED_ALBUMS:
-            existing = db.query(models.Album).filter(
-                models.Album.spotify_id == album_data["spotify_id"]
-            ).first()
-            if not existing:
-                album = models.Album(
-                    spotify_id=album_data["spotify_id"],
-                    name=album_data["name"],
-                    artist_name=album_data["artist"],
-                    cover_url=album_data["cover_url"],
-                    release_date=album_data["release_date"],
-                )
-                db.add(album)
-            album_map[album_data["name"]] = album_data["spotify_id"]
+        # Also clear old seeded albums to get fresh cover URLs
+        seed_ids = [a["spotify_id"] for a in SEED_ALBUMS]
+        db.query(models.Album).filter(
+            models.Album.spotify_id.in_(seed_ids)
+        ).delete(synchronize_session=False)
         db.commit()
-        print(f"   ✅ {len(SEED_ALBUMS)} albums cached")
+
+        # --- 1. Create Albums (real covers from Spotify API) ---
+        print("Creating album cache entries...")
+        album_map = {}  # name -> spotify_id
+        added_count = 0
+        skipped_count = 0
+        for album_data in SEED_ALBUMS:
+            cover_url = await fetch_cover_url(token, album_data["spotify_id"])
+            if not cover_url:
+                # Album not found on Spotify (deleted/unavailable) — skip it entirely
+                print(f"   SKIPPED (not on Spotify): {album_data['name']}")
+                skipped_count += 1
+                continue
+
+            print(f"   OK: {album_data['name']}")
+            album = models.Album(
+                spotify_id=album_data["spotify_id"],
+                name=album_data["name"],
+                artist_name=album_data["artist"],
+                cover_url=cover_url,
+                release_date=album_data["release_date"],
+            )
+            db.add(album)
+            album_map[album_data["name"]] = album_data["spotify_id"]
+            added_count += 1
+        db.commit()
+        print(f"   {added_count} albums cached ({skipped_count} skipped - not available on Spotify)")
 
         # --- 2. Create Bot Users ---
-        print("👤 Creating bot users...")
+        print("Creating bot users...")
         bot_users = []
         for user_data in SEED_USERS:
             user = models.User(
@@ -339,24 +399,22 @@ def seed_database():
             db.flush()  # Get ID without full commit
             bot_users.append(user)
         db.commit()
-        print(f"   ✅ {len(bot_users)} bot users created")
+        print(f"   {len(bot_users)} bot users created")
 
         # --- 3. Create Reviews ---
-        print("📝 Creating reviews...")
+        print("Creating reviews...")
         review_count = 0
         for album_name, review_options in REVIEW_TEMPLATES.items():
             spotify_id = album_map.get(album_name)
             if not spotify_id:
                 continue
 
-            # Each bot has a chance to review each album (not all bots review everything)
             reviewers = random.sample(bot_users, k=min(len(review_options), len(bot_users)))
             for i, reviewer in enumerate(reviewers):
                 if i >= len(review_options):
                     break
                 rating, text = review_options[i]
 
-                # Randomize dates over the past 3 months
                 days_ago = random.randint(1, 90)
                 review_date = datetime.now(timezone.utc) - timedelta(days=days_ago)
 
@@ -372,13 +430,12 @@ def seed_database():
                 db.add(review)
                 review_count += 1
         db.commit()
-        print(f"   ✅ {review_count} reviews created")
+        print(f"   {review_count} reviews created")
 
         # --- 4. Create Lists ---
-        print("📋 Creating curated lists...")
+        print("Creating curated lists...")
         list_count = 0
         for i, list_data in enumerate(SEED_LISTS):
-            # Assign lists to different bots round-robin
             owner = bot_users[i % len(bot_users)]
 
             days_ago = random.randint(1, 60)
@@ -392,7 +449,6 @@ def seed_database():
             db.add(user_list)
             db.flush()
 
-            # Add albums to the list
             for pos, album_name in enumerate(list_data["album_keys"]):
                 spotify_id = album_map.get(album_name)
                 if spotify_id:
@@ -405,13 +461,12 @@ def seed_database():
 
             list_count += 1
         db.commit()
-        print(f"   ✅ {list_count} curated lists created")
+        print(f"   {list_count} curated lists created")
 
-        # --- 5. Add some follower relationships ---
-        print("🤝 Creating follower relationships...")
+        # --- 5. Add follower relationships ---
+        print("Creating follower relationships...")
         follow_count = 0
         for i, user in enumerate(bot_users):
-            # Each bot follows 2-3 others
             others = [u for u in bot_users if u.id != user.id]
             to_follow = random.sample(others, k=min(random.randint(2, 3), len(others)))
             for followed in to_follow:
@@ -427,19 +482,19 @@ def seed_database():
                     db.rollback()
                     continue
         db.commit()
-        print(f"   ✅ {follow_count} follower relationships created")
+        print(f"   {follow_count} follower relationships created")
 
-        print("\n🎉 Database seeded successfully!")
-        print(f"   📊 Summary: {len(bot_users)} users, {len(SEED_ALBUMS)} albums, {review_count} reviews, {list_count} lists")
-        print(f"   🔑 Bot login: any bot email (e.g. ana@seedbot.needle) / password: seed123456")
+        print("\nDatabase seeded successfully!")
+        print(f"   Summary: {len(bot_users)} users, {len(SEED_ALBUMS)} albums, {review_count} reviews, {list_count} lists")
+        print(f"   Bot login: any bot email (e.g. ana@seedbot.needle) / password: seed123456")
 
     except Exception as e:
         db.rollback()
-        print(f"\n❌ Error during seeding: {e}")
+        print(f"\nError during seeding: {e}")
         raise
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    seed_database()
+    asyncio.run(seed_database())
