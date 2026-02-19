@@ -3,7 +3,7 @@
   <!-- Adicione seu banner aqui -->
   <!-- <img src="assets/banner_sonora.png" alt="Sonora" width="100%"> -->
   
-  # 🎵 Sonora
+  # 🎵 Needle
 
   **Sua plataforma de reviews e descoberta musical**
 
@@ -20,7 +20,7 @@
 
 ## 🌟 Sobre o Projeto
 
-**Sonora** é uma plataforma social de reviews de música, inspirada no Letterboxd. Permite que os usuários busquem álbuns via Spotify, escrevam avaliações detalhadas com notas de 0.5 a 5 estrelas, criem listas curadoras e acompanhem a atividade da comunidade — tudo isso com uma interface moderna, responsiva e com suporte a tema escuro e claro.
+**Needle** é uma plataforma social de reviews de música, inspirada no Letterboxd. Permite que os usuários busquem álbuns via Spotify, escrevam avaliações detalhadas com notas de 0.5 a 5 estrelas, criem listas curadoras e acompanhem a atividade da comunidade — tudo isso com uma interface moderna, responsiva e com suporte a tema escuro e claro.
 
 O projeto combina um frontend React com shadcn/ui e um backend FastAPI com autenticação JWT, proxy seguro para a API do Spotify e banco de dados SQLite.
 
