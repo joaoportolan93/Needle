@@ -364,10 +364,14 @@ async def seed_database():
         for album_data in SEED_ALBUMS:
             cover_url = await fetch_cover_url(token, album_data["spotify_id"])
             if not cover_url:
-                # Album not found on Spotify (deleted/unavailable) — skip it entirely
-                print(f"   SKIPPED (not on Spotify): {album_data['name']}")
-                skipped_count += 1
-                continue
+                # Fallback to hardcoded cover URL from SEED_ALBUMS
+                cover_url = album_data.get("cover_url")
+                if cover_url:
+                    print(f"   FALLBACK (using hardcoded cover): {album_data['name']}")
+                else:
+                    print(f"   SKIPPED (no cover available): {album_data['name']}")
+                    skipped_count += 1
+                    continue
 
             print(f"   OK: {album_data['name']}")
             album = models.Album(

@@ -150,6 +150,7 @@ const ProfilePage = () => {
           alt={review.album?.name}
           className="w-full h-40 object-cover rounded-md mb-2"
           loading="lazy"
+          onError={(e) => { e.target.src = `https://via.placeholder.com/300/14181C/555555?text=${encodeURIComponent(review.album?.name || 'Álbum')}`; e.target.onerror = null; }}
         />
         <h3 className="text-lg font-semibold truncate text-foreground">{review.album?.name || 'Álbum'}</h3>
         <p className="text-sm text-muted-foreground truncate">{review.album?.artist_name}</p>
@@ -184,6 +185,7 @@ const ProfilePage = () => {
           src={item.itemCoverUrl || item.coverUrl || `https://via.placeholder.com/150/14181C/E1E1E1?text=${item.itemName || item.name || 'Capa'}`}
           alt={`Capa de ${item.itemName || item.name}`}
           className="w-full h-40 object-cover rounded-md mb-2"
+          onError={(e) => { e.target.src = `https://via.placeholder.com/300/14181C/555555?text=${encodeURIComponent(item.itemName || item.name || 'Capa')}`; e.target.onerror = null; }}
         />
         <h3 className="text-lg font-semibold truncate text-foreground">{item.itemName || item.name}</h3>
         <p className="text-sm text-muted-foreground truncate">{item.itemArtist || item.artist}</p>
@@ -210,9 +212,20 @@ const ProfilePage = () => {
       <div key={list.id} className="bg-card rounded-lg shadow border border-border overflow-hidden">
         <div className="grid grid-cols-2 grid-rows-2 aspect-square">
           {covers.slice(0, 4).map((url, i) => (
-            <div key={i} className="overflow-hidden">
+            <div key={i} className="overflow-hidden relative">
               {url ? (
-                <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                <>
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.cover-fallback').style.display = 'flex'; }}
+                  />
+                  <div className="cover-fallback w-full h-full bg-secondary items-center justify-center absolute inset-0" style={{ display: 'none' }}>
+                    <Music size={14} className="text-muted-foreground/30" />
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-full bg-secondary flex items-center justify-center">
                   <Music size={14} className="text-muted-foreground/30" />

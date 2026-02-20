@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { searchSpotify } from '../services/api';
+import { searchSpotify, getSpotifyCategories } from '../services/api';
+import { Music, TrendingUp, Globe, Flame } from 'lucide-react';
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,6 +9,55 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Curated highlight cards (playlists/charts that users can explore)
+  const curatedCards = [
+    {
+      id: 'toplists',
+      name: 'Top 50 Brasil',
+      gradient: 'from-green-500 to-green-800',
+      icon: <TrendingUp size={28} />,
+      searchQuery: 'Top 50 Brasil',
+    },
+    {
+      id: 'global',
+      name: 'Top 50 Global',
+      gradient: 'from-blue-500 to-indigo-800',
+      icon: <Globe size={28} />,
+      searchQuery: 'Top 50 Global',
+    },
+    {
+      id: 'viral',
+      name: 'Viral Brasil',
+      gradient: 'from-orange-500 to-red-700',
+      icon: <Flame size={28} />,
+      searchQuery: 'Viral 50 Brasil',
+    },
+    {
+      id: 'discover',
+      name: 'Descobertas da Semana',
+      gradient: 'from-purple-500 to-pink-700',
+      icon: <Music size={28} />,
+      searchQuery: 'Descobertas da Semana',
+    },
+  ];
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getSpotifyCategories(20);
+        setCategories(data.categories?.items || []);
+      } catch (err) {
+        console.error('Erro ao buscar categorias:', err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -41,6 +91,11 @@ const SearchPage = () => {
     if (debouncedTerm) handleSearch(debouncedTerm);
   }, [debouncedTerm, handleSearch]);
 
+  const handleCuratedClick = (query) => {
+    setSearchTerm(query);
+    setDebouncedTerm(query);
+  };
+
   const renderResults = (items, type) => {
     if (!items || items.length === 0) {
       return <p className="text-muted-foreground mt-4">Nenhum resultado encontrado para {type}.</p>;
@@ -73,6 +128,30 @@ const SearchPage = () => {
       </div>
     );
   };
+
+  // Genre card colors — cycling gradient pairs
+  const genreGradients = [
+    'from-emerald-600 to-emerald-900',
+    'from-rose-600 to-rose-900',
+    'from-violet-600 to-violet-900',
+    'from-amber-600 to-amber-900',
+    'from-cyan-600 to-cyan-900',
+    'from-fuchsia-600 to-fuchsia-900',
+    'from-lime-600 to-lime-900',
+    'from-sky-600 to-sky-900',
+    'from-teal-600 to-teal-900',
+    'from-pink-600 to-pink-900',
+    'from-indigo-600 to-indigo-900',
+    'from-orange-600 to-orange-900',
+    'from-red-600 to-red-900',
+    'from-blue-600 to-blue-900',
+    'from-yellow-600 to-yellow-900',
+    'from-purple-600 to-purple-900',
+    'from-stone-600 to-stone-900',
+    'from-slate-600 to-slate-900',
+    'from-zinc-600 to-zinc-900',
+    'from-neutral-600 to-neutral-900',
+  ];
 
   return (
     <div className="p-4 max-w-6xl mx-auto text-foreground">
@@ -123,8 +202,84 @@ const SearchPage = () => {
           {activeFilter === 'tracks' && renderResults(results.tracks, 'Músicas')}
         </div>
       )}
+
+      {/* Idle state: show genre exploration cards */}
       {!debouncedTerm && !loading && (
-        <p className="text-muted-foreground text-center mt-8">Digite algo para começar a busca.</p>
+        <div className="mt-6 space-y-8">
+
+          {/* Curated highlights */}
+          <section>
+            <h2 className="text-xl font-bold mb-4 text-foreground">🔥 Em Destaque</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {curatedCards.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => handleCuratedClick(card.searchQuery)}
+                  className={`group relative aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br ${card.gradient} 
+                    hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg hover:shadow-xl text-left`}
+                >
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                  <div className="relative p-4 flex flex-col justify-between h-full text-white">
+                    <div className="opacity-60 group-hover:opacity-80 transition-opacity">
+                      {card.icon}
+                    </div>
+                    <h3 className="text-sm sm:text-base font-bold leading-tight drop-shadow-lg">
+                      {card.name}
+                    </h3>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Spotify genre categories */}
+          <section>
+            <h2 className="text-xl font-bold mb-4 text-foreground">🎵 Explorar por Gênero</h2>
+            {categoriesLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="aspect-square rounded-xl bg-card animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {categories.map((cat, idx) => (
+                  <Link
+                    to={`/search?category=${cat.id}`}
+                    key={cat.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleCuratedClick(cat.name);
+                    }}
+                    className="group relative aspect-square overflow-hidden rounded-xl shadow-md hover:shadow-xl 
+                      hover:scale-[1.03] active:scale-[0.97] transition-all duration-300"
+                  >
+                    {/* Background gradient (always visible) */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${genreGradients[idx % genreGradients.length]}`} />
+
+                    {/* Category icon image */}
+                    {cat.icons && cat.icons.length > 0 && (
+                      <img
+                        src={cat.icons[0].url}
+                        className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-40 
+                          group-hover:scale-110 transition-all duration-500"
+                        alt={cat.name}
+                      />
+                    )}
+
+                    {/* Text overlay */}
+                    <div className="absolute inset-0 flex items-end p-3 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                      <span className="font-bold text-white text-sm drop-shadow-lg leading-tight">
+                        {cat.name}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
+        </div>
       )}
     </div>
   );

@@ -71,13 +71,12 @@ const HomePage = () => {
         <div className="flex flex-col lg:flex-row items-center gap-6">
           {/* Text */}
           <div className="flex-1 z-10 text-center lg:text-left">
-            <span className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2 block">Plataforma de Reviews</span>
             <h1 className="text-3xl lg:text-4xl font-extrabold text-foreground leading-tight mb-2">
-              Descubra. Ouça.<br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Compartilhe.</span>
+              Ouça, descubra <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">e compartilhe!</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto lg:mx-0 leading-relaxed">
-              Avalie álbuns, descubra artistas e conecte-se com uma comunidade apaixonada por música.
+              Inspirado em um site de filmes e alguns outros de músicas, Needle é a mais nova plataforma onde você pode escrever suas reviews de forma profissional (ou não) sobre álbuns, músicas e artistas! Venha fazer parte da comunidade!
             </p>
             <div className="flex gap-3 mt-4 justify-center lg:justify-start">
               <Link to="/search" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">

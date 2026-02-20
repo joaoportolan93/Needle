@@ -30,12 +30,18 @@ const ListCard = ({ list }) => {
           {covers.slice(0, 4).map((url, i) => (
             <div key={i} className="relative overflow-hidden">
               {url ? (
-                <img
-                  src={url}
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
+                <>
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.cover-fallback').style.display = 'flex'; }}
+                  />
+                  <div className="cover-fallback w-full h-full bg-gradient-to-br from-green-800/30 to-purple-900/30 items-center justify-center absolute inset-0" style={{ display: 'none' }}>
+                    <Music size={16} className="text-muted-foreground/40" />
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-green-800/30 to-purple-900/30 flex items-center justify-center">
                   <Music size={16} className="text-muted-foreground/40" />

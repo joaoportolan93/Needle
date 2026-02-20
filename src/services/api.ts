@@ -1,5 +1,5 @@
 /**
- * Sonora API Service
+ * Needle API Service
  * ===================
  * Secure API client that communicates with the Python backend.
  * All Spotify API calls are proxied through the backend to keep credentials safe.

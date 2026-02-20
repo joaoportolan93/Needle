@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Heart, MessageCircle, Clock, Bookmark } from 'lucide-react';
+import { Star, Heart, MessageCircle, Clock, Bookmark, Music } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ReviewCard = ({ activity }) => {
+    const [imgError, setImgError] = useState(false);
     const {
         type,
         itemId,
@@ -64,11 +65,19 @@ const ReviewCard = ({ activity }) => {
             {/* Left: Poster */}
             <div className="shrink-0 relative">
                 <Link to={`/item/${itemId}`}>
-                    <img
-                        src={itemCoverUrl || "https://via.placeholder.com/150"}
-                        alt={itemName}
-                        className="w-[70px] h-[105px] object-cover rounded shadow-md hover:scale-105 transition-transform duration-300"
-                    />
+                    {!imgError && itemCoverUrl ? (
+                        <img
+                            src={itemCoverUrl}
+                            alt={itemName}
+                            className="w-[70px] h-[105px] object-cover rounded shadow-md hover:scale-105 transition-transform duration-300"
+                            onError={() => setImgError(true)}
+                        />
+                    ) : (
+                        <div className="w-[70px] h-[105px] rounded shadow-md bg-gradient-to-br from-zinc-700 to-zinc-900 flex flex-col items-center justify-center gap-1 hover:scale-105 transition-transform duration-300">
+                            <Music size={22} className="text-zinc-400" />
+                            <span className="text-[8px] text-zinc-500 text-center px-1 leading-tight line-clamp-2">{itemName}</span>
+                        </div>
+                    )}
                 </Link>
                 {/* Type Icon Badge on Poster */}
                 <div className="absolute -top-2 -left-2 bg-card rounded-full p-1 shadow border border-border">

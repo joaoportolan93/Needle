@@ -104,13 +104,34 @@ async def spotify_categories(
 
 
 @app.get("/api/spotify/albums/{album_id}", tags=["Spotify"])
-async def spotify_album_details(album_id: str):
-    """Get album details by Spotify ID."""
+async def spotify_album_details(album_id: str, db: Session = Depends(get_db)):
+    """Get album details by Spotify ID, with DB cache fallback."""
     try:
         result = await spotify_service.get_album(album_id)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        # If Spotify returned 404, try our cached DB data
+        if "404" in error_msg:
+            album = db.query(models.Album).filter(
+                models.Album.spotify_id == album_id
+            ).first()
+            if album:
+                # Return data in Spotify-compatible format so frontend works
+                return {
+                    "id": album.spotify_id,
+                    "name": album.name,
+                    "artists": [{"id": "cached", "name": album.artist_name}],
+                    "images": [{"url": album.cover_url, "height": 640, "width": 640}] if album.cover_url else [],
+                    "release_date": album.release_date or "",
+                    "total_tracks": 0,
+                    "popularity": 0,
+                    "tracks": {"items": []},
+                    "external_urls": {"spotify": f"https://open.spotify.com/album/{album.spotify_id}"},
+                    "album_type": "album",
+                    "_cached": True,  # Flag to indicate this is cached data
+                }
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.get("/api/spotify/artists/{artist_id}", tags=["Spotify"])
