@@ -1,11 +1,13 @@
+> 🇧🇷 [Leia em Português](README_pt.md)
+
 <div align="center">
 
-  <!-- Adicione seu banner aqui -->
-  <!-- <img src="assets/banner_sonora.png" alt="Sonora" width="100%"> -->
+  <!-- Add your banner here -->
+  <!-- <img src="assets/banner_needle.png" alt="Needle" width="100%"> -->
   
   # 🎵 Needle
 
-  **Sua plataforma de reviews e descoberta musical**
+  **Your platform for music reviews and discovery**
 
   [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -18,140 +20,140 @@
 
 ---
 
-## 🌟 Sobre o Projeto
+## 🌟 About the Project
 
-**Needle** é uma plataforma social de reviews de música, inspirada no Letterboxd. Permite que os usuários busquem álbuns via Spotify, escrevam avaliações detalhadas com notas de 0.5 a 5 estrelas, criem listas curadoras e acompanhem a atividade da comunidade — tudo isso com uma interface moderna, responsiva e com suporte a tema escuro e claro.
+**Needle** is a social music review platform, inspired by Letterboxd. It allows users to search for albums via Spotify, write detailed reviews with ratings from 0.5 to 5 stars, create curated lists, and follow community activity — all with a modern, responsive interface that supports both dark and light themes.
 
-O projeto combina um frontend React com shadcn/ui e um backend FastAPI com autenticação JWT, proxy seguro para a API do Spotify e banco de dados SQLite.
+The project combines a React frontend with shadcn/ui and a FastAPI backend featuring JWT authentication, a secure proxy for the Spotify API, and an SQLite database.
 
 
-## 🧩 Arquitetura
+## 🧩 Architecture
 
 ```mermaid
 graph TD
     subgraph Frontend ["Frontend (React + Vite)"]
-        UI[Interface do Usuário] --> API_CLIENT[API Service]
+        UI[User Interface] --> API_CLIENT[API Service]
         UI --> AUTH_CTX[AuthContext]
     end
 
     subgraph Backend ["Backend (FastAPI)"]
-        ROUTES[Routers] --> AUTH[Autenticação JWT]
+        ROUTES[Routers] --> AUTH[JWT Authentication]
         ROUTES --> DB[(SQLite)]
         ROUTES --> SPOTIFY_SVC[Spotify Service]
     end
 
     API_CLIENT -->|HTTP / REST| ROUTES
-    SPOTIFY_SVC -->|Proxy Seguro| SPOTIFY_API[Spotify Web API]
+    SPOTIFY_SVC -->|Secure Proxy| SPOTIFY_API[Spotify Web API]
 ```
 
 
-## 🚀 Funcionalidades
+## 🚀 Features
 
-- **🔍 Busca por Álbuns, Artistas e Faixas** — Integração direta com a API do Spotify
-- **⭐ Reviews com Meia Estrela** — Avaliações de 0.5 a 5.0 estrelas com texto em formato livre
-- **📋 Listas Personalizadas** — Crie e compartilhe listas curadoras de álbuns
-- **👤 Perfis Públicos** — Veja reviews e listas de outros usuários
-- **📰 Feed de Atividades** — Acompanhe avaliações recentes da comunidade
-- **🎨 Temas Claro e Escuro** — Interface adaptável à preferência do usuário
-- **🔐 Autenticação Segura** — Login com JWT, senhas hasheadas com bcrypt
-- **🌱 Seed Data Realista** — Script de seeds com 5 bots, 87 reviews e 6 listas curadoras
+- **🔍 Search Albums, Artists, and Tracks** — Direct integration with the Spotify API
+- **⭐ Half-Star Reviews** — Ratings from 0.5 to 5.0 stars with free-form text
+- **📋 Custom Lists** — Create and share curated album lists
+- **👤 Public Profiles** — Browse other users' reviews and lists
+- **📰 Activity Feed** — Follow recent community reviews
+- **🎨 Light and Dark Themes** — Interface adapts to the user's preference
+- **🔐 Secure Authentication** — JWT login with bcrypt-hashed passwords
+- **🌱 Realistic Seed Data** — Seed script with 5 bots, 87 reviews, and 6 curated lists
 
 
-## 🛠️ Instalação
+## 🛠️ Installation
 
-### Pré-requisitos
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
 - [Python](https://www.python.org/) 3.10+
-- Credenciais da [Spotify Developer API](https://developer.spotify.com/dashboard)
+- [Spotify Developer API](https://developer.spotify.com/dashboard) credentials
 
 ### Backend
 
 ```bash
-# Clone o repositório
-git clone https://github.com/joaoportolan93/Sonora.git
-cd Sonora
+# Clone the repository
+git clone https://github.com/joaoportolan93/Needle.git
+cd Needle
 
-# Crie e ative o ambiente virtual
+# Create and activate the virtual environment
 cd backend
 python -m venv .venv
 .venv\Scripts\activate   # Windows
 # source .venv/bin/activate  # Linux/Mac
 
-# Instale as dependências
+# Install dependencies
 pip install -r requirements.txt
 
-# Configure as variáveis de ambiente
-# Crie o arquivo backend/.env com:
-#   SPOTIFY_CLIENT_ID=seu_client_id
-#   SPOTIFY_CLIENT_SECRET=seu_client_secret
-#   SECRET_KEY=sua_chave_secreta_jwt
-#   DATABASE_URL=sqlite:///./sonora.db
+# Set up environment variables
+# Create the backend/.env file with:
+#   SPOTIFY_CLIENT_ID=your_client_id
+#   SPOTIFY_CLIENT_SECRET=your_client_secret
+#   SECRET_KEY=your_jwt_secret_key
+#   DATABASE_URL=sqlite:///./needle.db
 #   FRONTEND_URL=http://localhost:5173
 
-# (Opcional) Popule o banco com dados de exemplo
+# (Optional) Populate the database with sample data
 python seeds.py
 
-# Inicie o servidor
+# Start the server
 python main.py
 ```
 
 ### Frontend
 
 ```bash
-# Na raiz do projeto
+# From the project root
 cd ..
 npm install
 
-# Configure as variáveis de ambiente
-# Crie o arquivo .env com:
+# Set up environment variables
+# Create the .env file with:
 #   VITE_API_URL=http://localhost:8000
 
-# Inicie o servidor de desenvolvimento
+# Start the development server
 npm run dev
 ```
 
-O frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:8000`.
+The frontend will be available at `http://localhost:5173` and the backend at `http://localhost:8000`.
 
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
-Sonora/
+Needle/
 ├── backend/
-│   ├── routers/          # Rotas da API (users, lists)
-│   ├── auth.py           # Autenticação JWT
-│   ├── database.py       # Configuração do banco
-│   ├── main.py           # App FastAPI + rotas de review/feed
-│   ├── models.py         # Modelos SQLAlchemy
-│   ├── schemas.py        # Schemas Pydantic
-│   ├── seeds.py          # Script de dados de exemplo
-│   └── spotify_service.py # Proxy para API do Spotify
+│   ├── routers/          # API routes (users, lists)
+│   ├── auth.py           # JWT authentication
+│   ├── database.py       # Database configuration
+│   ├── main.py           # FastAPI app + review/feed routes
+│   ├── models.py         # SQLAlchemy models
+│   ├── schemas.py        # Pydantic schemas
+│   ├── seeds.py          # Sample data script
+│   └── spotify_service.py # Spotify API proxy
 ├── src/
-│   ├── components/       # Componentes React reutilizáveis
+│   ├── components/       # Reusable React components
 │   ├── contexts/         # AuthContext
-│   ├── pages/            # Páginas da aplicação
-│   ├── services/         # Cliente API (api.ts)
-│   └── App.jsx           # Roteamento principal
-├── .env                  # Variáveis do frontend
+│   ├── pages/            # Application pages
+│   ├── services/         # API client (api.ts)
+│   └── App.jsx           # Main routing
+├── .env                  # Frontend environment variables
 └── package.json
 ```
 
 
-## 🔒 Segurança
+## 🔒 Security
 
-- Credenciais do Spotify ficam **apenas no backend** (proxy seguro)
-- Senhas são hasheadas com **bcrypt** antes de armazenar
-- Autenticação via **JWT** com token de expiração
-- Emails dos usuários **nunca são expostos** em endpoints públicos
-- Arquivos `.env` **nunca são commitados** no Git
-
-
-## 🤝 Contribuições
-
-Contribuições são bem-vindas! Sinta-se livre para abrir issues e pull requests.
+- Spotify credentials are stored **only in the backend** (secure proxy)
+- Passwords are hashed with **bcrypt** before storage
+- Authentication via **JWT** with token expiration
+- User emails are **never exposed** in public endpoints
+- `.env` files are **never committed** to Git
 
 
-## 📄 Licença
+## 🤝 Contributing
 
-Este projeto está sob a licença MIT — veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Contributions are welcome! Feel free to open issues and pull requests.
+
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
