@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getSpotifyAlbumDetails, getSpotifyArtistDetails, getSpotifyTrackDetails } from '../services/api';
+import { getSpotifyAlbumDetails, getSpotifyArtistDetails, getSpotifyTrackDetails, getUserLists, addListItem } from '../services/api';
 import ShareButtons from '../components/ShareButtons';
+import { useAuth } from '../contexts/AuthContext';
+import { Loader2, Plus, Music } from 'lucide-react';
 
 const DetailPage = () => {
   const { id, type = 'album' } = useParams();
@@ -16,6 +18,13 @@ const DetailPage = () => {
   const [customTag, setCustomTag] = useState('');
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  
+  // States for Add to List Custom Modal
+  const { user } = useAuth();
+  const [showListModal, setShowListModal] = useState(false);
+  const [userLists, setUserLists] = useState([]);
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [addingToListId, setAddingToListId] = useState(null);
 
   const predefinedTags = [
     "Relaxante", "Enérgico", "Melancólico", "Feliz", "Nostálgico", "Dançante",
@@ -150,6 +159,44 @@ const DetailPage = () => {
     }
   };
 
+  const handleOpenListModal = async () => {
+    if (!user) {
+      alert('Faça login para adicionar álbuns a uma lista.');
+      return;
+    }
+    setShowListModal(true);
+    if (userLists.length === 0) {
+      setIsLoadingLists(true);
+      try {
+        const lists = await getUserLists(user.id, 50);
+        setUserLists(lists);
+      } catch (err) {
+        console.error('Erro ao buscar listas do usuário:', err);
+      } finally {
+        setIsLoadingLists(false);
+      }
+    }
+  };
+
+  const handleAddToList = async (listId) => {
+    if (!id) return;
+    setAddingToListId(listId);
+    try {
+      await addListItem(listId, { album_spotify_id: id });
+      alert('Álbum adicionado à lista com sucesso!');
+      setShowListModal(false);
+    } catch (err) {
+      console.error('Erro ao adicionar item à lista:', err);
+      if (err.message && err.message.includes('already in this list')) {
+         alert('Este álbum já está na lista.');
+      } else {
+         alert('Ocorreu um erro ao adicionar à lista. Tente novamente.');
+      }
+    } finally {
+      setAddingToListId(null);
+    }
+  };
+
   const handleTagClick = (tag) => {
     if (selectedTags.includes(tag)) {
       setSelectedTags(selectedTags.filter(t => t !== tag));
@@ -250,6 +297,13 @@ const DetailPage = () => {
               className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded flex items-center justify-center"
             >
               <span>➕ Adicionar à lista "Quero Ouvir"</span>
+            </button>
+            <button
+              onClick={handleOpenListModal}
+              className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded flex items-center justify-center gap-2"
+            >
+              <Plus size={18} />
+              <span>Adicionar a uma Lista</span>
             </button>
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
@@ -481,6 +535,78 @@ const DetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Modal: Adicionar à Lista */}
+      {showListModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl w-full max-w-sm flex flex-col shadow-2xl max-h-[80vh]">
+            <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10 rounded-t-xl">
+              <h3 className="font-bold text-lg text-foreground">Adicionar à Lista</h3>
+              <button 
+                onClick={() => setShowListModal(false)}
+                className="text-muted-foreground hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-4 flex-1">
+              {isLoadingLists ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <Loader2 className="animate-spin text-green-500 mb-2" size={24} />
+                  <p className="text-sm text-muted-foreground">Carregando suas listas...</p>
+                </div>
+              ) : userLists.length === 0 ? (
+                <div className="text-center py-8">
+                  <Music className="mx-auto text-muted-foreground/50 mb-3" size={32} />
+                  <p className="text-sm text-muted-foreground mb-4">Você ainda não criou nenhuma lista.</p>
+                  <Link 
+                    to="/lists" 
+                    className="text-sm text-green-400 hover:underline font-semibold"
+                  >
+                    Criar Nova Lista
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {userLists.map(list => (
+                    <button
+                      key={list.id}
+                      onClick={() => handleAddToList(list.id)}
+                      disabled={addingToListId === list.id}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-border text-left group"
+                    >
+                      <div className="w-10 h-10 bg-secondary rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {(list.items && list.items.length > 0) ? (
+                          <img src={list.items[0].album?.cover_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Music size={16} className="text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-green-400 transition-colors">
+                          {list.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {list.items_count} {list.items_count === 1 ? 'item' : 'itens'} {list.is_public ? '• Pública' : '• Privada'}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {addingToListId === list.id ? (
+                          <Loader2 size={18} className="animate-spin text-green-500" />
+                        ) : (
+                          <Plus size={18} className="text-muted-foreground group-hover:text-green-400" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

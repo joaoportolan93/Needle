@@ -91,3 +91,28 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+async def get_current_user_optional(
+    token: Optional[str] = Depends(OAuth2PasswordBearer(tokenUrl="/api/users/login", auto_error=False)),
+    db: Session = Depends(get_db),
+) -> Optional[models.User]:
+    """
+    FastAPI dependency that extracts and validates the JWT token optionally.
+    Returns None if no token is provided or if it's invalid.
+    Useful for routes where authentication is optional but changes behavior (like viewing private lists).
+    """
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id_str: Optional[str] = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = int(user_id_str)
+    except (JWTError, ValueError):
+        return None
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    return user

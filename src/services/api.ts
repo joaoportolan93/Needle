@@ -30,8 +30,20 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+        let errorMsg = `HTTP error! status: ${response.status}`;
+        try {
+            const error = await response.json();
+            errorMsg = error.detail || errorMsg;
+        } catch (e) {
+            // Se falhar ao parsear JSON no erro, mantém a mensagem padrão
+            console.error('Error parsing error response:', e);
+        }
+        throw new Error(errorMsg);
+    }
+
+    // Se a resposta for 204 No Content, não há JSON para parsear
+    if (response.status === 204) {
+        return null as any;
     }
 
     return response.json();
@@ -410,6 +422,13 @@ export async function addListItem(listId: number, data: { album_spotify_id: stri
         method: 'POST',
         body: JSON.stringify(data),
     });
+}
+
+/**
+ * Remove an album item from a list (requires auth)
+ */
+export async function deleteListItem(listId: number, itemId: number): Promise<void> {
+    return fetchAPI(`/api/lists/${listId}/items/${itemId}`, { method: 'DELETE' });
 }
 
 /**

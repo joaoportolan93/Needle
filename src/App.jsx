@@ -7,6 +7,7 @@ import SearchPage from './pages/SearchPage';
 import DetailPage from './pages/DetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ListsPage from './pages/ListsPage';
+import ListDetailPage from './pages/ListDetailPage';
 import AddPage from './pages/AddPage';
 import ArtistPage from './pages/ArtistPage';
 import LoginPage from './pages/LoginPage';
@@ -31,6 +32,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:username" element={<ProfilePage />} />
               <Route path="/lists" element={<ListsPage />} />
+              <Route path="/lists/:id" element={<ListDetailPage />} />
               <Route path="/add" element={<AddPage />} />
             </Routes>
           </main>

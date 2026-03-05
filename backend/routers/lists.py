@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from database import get_db
-from auth import get_current_user
+from auth import get_current_user, get_current_user_optional
 import models, schemas
 
 router = APIRouter(prefix="/api/lists", tags=["Lists"])
@@ -148,7 +148,11 @@ async def get_user_lists(
 
 
 @router.get("/{list_id}", response_model=schemas.UserListResponse)
-async def get_list_detail(list_id: int, db: Session = Depends(get_db)):
+async def get_list_detail(
+    list_id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user_optional)
+):
     """Get a single list with all its items and album details."""
     lst = (
         db.query(models.UserList)
@@ -164,7 +168,8 @@ async def get_list_detail(list_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="List not found")
 
     if not lst.is_public:
-        raise HTTPException(status_code=403, detail="This list is private")
+        if not current_user or current_user.id != lst.user_id:
+            raise HTTPException(status_code=403, detail="This list is private")
 
     return schemas.UserListResponse(
         id=lst.id,
