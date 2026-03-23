@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import ReviewCard from './ReviewCard';
 import { useAuth } from '../contexts/AuthContext';
 import { getActivityFeed } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const ActivityFeed = () => {
   const { user: currentUser } = useAuth();
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadActivities = async () => {
@@ -50,7 +52,7 @@ const ActivityFeed = () => {
 
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('sonora-review-')) {
+        if (key && key.startsWith('needle-review-')) {
           try {
             const reviewData = JSON.parse(localStorage.getItem(key));
             if (reviewData && reviewData.itemId) {
@@ -70,7 +72,7 @@ const ActivityFeed = () => {
         }
       }
 
-      const favorites = JSON.parse(localStorage.getItem('sonora-favorites') || '[]');
+      const favorites = JSON.parse(localStorage.getItem('needle-favorites') || '[]');
       favorites.forEach(favorite => {
         allActivities.push({
           id: `favorite-${favorite.id}`,
@@ -84,7 +86,7 @@ const ActivityFeed = () => {
         });
       });
 
-      const watchlist = JSON.parse(localStorage.getItem('sonora-watchlist') || '[]');
+      const watchlist = JSON.parse(localStorage.getItem('needle-watchlist') || '[]');
       watchlist.forEach(item => {
         allActivities.push({
           id: `watchlist-${item.id}`,
@@ -144,7 +146,7 @@ const ActivityFeed = () => {
   if (isLoading) {
     return (
       <div className="py-4 text-center">
-        <p className="text-muted-foreground">Carregando atividades...</p>
+        <p className="text-muted-foreground">{t('activity.loading')}</p>
       </div>
     );
   }
@@ -152,7 +154,7 @@ const ActivityFeed = () => {
   if (activities.length === 0) {
     return (
       <div className="py-4 text-center">
-        <p className="text-muted-foreground">Nenhuma atividade encontrada. Comece a avaliar músicas e álbuns!</p>
+        <p className="text-muted-foreground">{t('activity.noActivity')}</p>
       </div>
     );
   }

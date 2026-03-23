@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserProfile, getUserReviews, getUserLists } from '../services/api';
 import { Star, Music, Users, ListMusic, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ProfilePage = () => {
   const { username: routeUsername } = useParams();
   const { user: currentUser } = useAuth();
+  const { t, i18n } = useTranslation();
 
   // Determine if we're viewing someone else's profile or our own
   const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
@@ -51,7 +53,7 @@ const ProfilePage = () => {
           const localReviews = [];
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('sonora-review-')) {
+            if (key && key.startsWith('needle-review-')) {
               try {
                 const reviewData = JSON.parse(localStorage.getItem(key));
                 if (reviewData && reviewData.itemId) localReviews.push(reviewData);
@@ -61,8 +63,8 @@ const ProfilePage = () => {
           setReviews(localReviews);
           calculateStats(localReviews);
 
-          setUserFavorites(JSON.parse(localStorage.getItem('sonora-favorites') || '[]'));
-          setUserWatchlist(JSON.parse(localStorage.getItem('sonora-watchlist') || '[]'));
+          setUserFavorites(JSON.parse(localStorage.getItem('needle-favorites') || '[]'));
+          setUserWatchlist(JSON.parse(localStorage.getItem('needle-watchlist') || '[]'));
 
           // Also load lists from API if user has ID
           if (currentUser.id) {
@@ -86,7 +88,7 @@ const ProfilePage = () => {
         }
       } catch (err) {
         console.error('Erro ao carregar perfil:', err);
-        setError(err.message || 'Usuário não encontrado');
+        setError(err.message || t('profile.notFound'));
       } finally {
         setIsLoading(false);
       }
@@ -119,9 +121,9 @@ const ProfilePage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <Users size={48} className="text-muted-foreground/40 mb-4" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Perfil não encontrado</h2>
+        <h2 className="text-xl font-bold text-foreground mb-2">{t('profile.notFound')}</h2>
         <p className="text-muted-foreground">{error}</p>
-        <Link to="/" className="mt-4 text-green-400 hover:underline">← Voltar ao início</Link>
+        <Link to="/" className="mt-4 text-green-400 hover:underline">{t('profile.backToHome')}</Link>
       </div>
     );
   }
@@ -130,16 +132,17 @@ const ProfilePage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <Users size={48} className="text-muted-foreground/40 mb-4" />
-        <h2 className="text-xl font-bold text-foreground mb-2">Faça login para ver seu perfil</h2>
-        <Link to="/login" className="mt-2 text-green-400 hover:underline">Entrar</Link>
+        <h2 className="text-xl font-bold text-foreground mb-2">{t('profile.loginToView')}</h2>
+        <Link to="/login" className="mt-2 text-green-400 hover:underline">{t('profile.login')}</Link>
       </div>
     );
   }
 
   const avatarUrl = profileUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileUser.username}`;
+  const locale = i18n.language?.startsWith('pt') ? 'pt-BR' : 'en-US';
   const joinDate = profileUser.created_at
-    ? new Date(profileUser.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    : 'Recente';
+    ? new Date(profileUser.created_at).toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+    : t('profile.recent');
 
   // ─── Review card for API reviews (public profile) ───
   const renderApiReview = (review) => (
@@ -171,7 +174,7 @@ const ProfilePage = () => {
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">"{review.review_text}"</p>
         )}
         <p className="text-xs text-muted-foreground/60 mt-1">
-          {new Date(review.created_at).toLocaleDateString('pt-BR')}
+          {new Date(review.created_at).toLocaleDateString(locale)}
         </p>
       </div>
     </div>
@@ -183,7 +186,7 @@ const ProfilePage = () => {
       <Link to={`/item/${item.itemId || item.id}`} className="block">
         <img
           src={item.itemCoverUrl || item.coverUrl || `https://via.placeholder.com/150/14181C/E1E1E1?text=${item.itemName || item.name || 'Capa'}`}
-          alt={`Capa de ${item.itemName || item.name}`}
+          alt={`${item.itemName || item.name}`}
           className="w-full h-40 object-cover rounded-md mb-2"
           onError={(e) => { e.target.src = `https://via.placeholder.com/300/14181C/555555?text=${encodeURIComponent(item.itemName || item.name || 'Capa')}`; e.target.onerror = null; }}
         />
@@ -236,7 +239,7 @@ const ProfilePage = () => {
         </div>
         <div className="p-3">
           <h3 className="font-semibold text-foreground truncate">{list.title}</h3>
-          <p className="text-xs text-muted-foreground">{list.items_count} álbuns</p>
+          <p className="text-xs text-muted-foreground">{list.items_count} {t('profile.albumsCount')}</p>
           {list.description && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{list.description}</p>
           )}
@@ -248,14 +251,14 @@ const ProfilePage = () => {
   // ─── Tab definitions ───
   const tabs = isOwnProfile
     ? [
-      { key: 'reviews', label: `Reviews (${reviews.length})` },
-      { key: 'lists', label: `Listas (${lists.length})` },
-      { key: 'favorites', label: `Favoritos (${userFavorites.length})` },
-      { key: 'watchlist', label: `Quero Ouvir (${userWatchlist.length})` },
+      { key: 'reviews', label: `${t('profile.reviews')} (${reviews.length})` },
+      { key: 'lists', label: `${t('profile.listsTab')} (${lists.length})` },
+      { key: 'favorites', label: `${t('profile.favorites')} (${userFavorites.length})` },
+      { key: 'watchlist', label: `${t('profile.watchlistTab')} (${userWatchlist.length})` },
     ]
     : [
-      { key: 'reviews', label: `Reviews (${reviews.length})` },
-      { key: 'lists', label: `Listas (${lists.length})` },
+      { key: 'reviews', label: `${t('profile.reviews')} (${reviews.length})` },
+      { key: 'lists', label: `${t('profile.listsTab')} (${lists.length})` },
     ];
 
   return (
@@ -272,24 +275,24 @@ const ProfilePage = () => {
           {profileUser.bio && (
             <p className="text-muted-foreground mt-1 text-sm max-w-lg">{profileUser.bio}</p>
           )}
-          <p className="text-muted-foreground text-xs mt-1">Membro desde {joinDate}</p>
+          <p className="text-muted-foreground text-xs mt-1">{t('profile.memberSince', { date: joinDate })}</p>
           <div className="mt-3 flex space-x-6 justify-center md:justify-start">
             <div className="text-center">
               <p className="text-xl font-semibold">{profileUser.reviews_count || reviews.length}</p>
-              <p className="text-xs text-muted-foreground">Reviews</p>
+              <p className="text-xs text-muted-foreground">{t('profile.reviews')}</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-semibold">{profileUser.followers_count || 0}</p>
-              <p className="text-xs text-muted-foreground">Seguidores</p>
+              <p className="text-xs text-muted-foreground">{t('profile.followers')}</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-semibold">{profileUser.following_count || 0}</p>
-              <p className="text-xs text-muted-foreground">Seguindo</p>
+              <p className="text-xs text-muted-foreground">{t('profile.following')}</p>
             </div>
             {isOwnProfile && (
               <div className="text-center">
                 <p className="text-xl font-semibold">{userFavorites.length}</p>
-                <p className="text-xs text-muted-foreground">Favoritos</p>
+                <p className="text-xs text-muted-foreground">{t('profile.favorites')}</p>
               </div>
             )}
           </div>
@@ -299,7 +302,7 @@ const ProfilePage = () => {
             to="/settings"
             className="mt-4 md:mt-0 md:ml-4 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm transition-colors"
           >
-            Editar Perfil
+            {t('profile.editProfile')}
           </Link>
         )}
       </div>
@@ -307,10 +310,10 @@ const ProfilePage = () => {
       {/* ─── Stats (own profile only) ─── */}
       {isOwnProfile && showStats && userStats.totalReviews > 0 && (
         <div className="mb-6 bg-card p-6 rounded-lg shadow-lg border border-border">
-          <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-border">Suas Estatísticas</h2>
+          <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-border">{t('profile.yourStats')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <p className="text-muted-foreground text-sm">Avaliação Média</p>
+              <p className="text-muted-foreground text-sm">{t('profile.averageRating')}</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-2xl font-bold text-yellow-400">{userStats.averageRating.toFixed(1)}</span>
                 <div className="flex">
@@ -321,7 +324,7 @@ const ProfilePage = () => {
               </div>
             </div>
             <div>
-              <p className="text-muted-foreground text-sm mb-2">Distribuição</p>
+              <p className="text-muted-foreground text-sm mb-2">{t('profile.distribution')}</p>
               {userStats.ratingDistribution.map((count, i) => (
                 <div key={i} className="flex items-center gap-2 mb-1">
                   <span className="text-xs w-6 text-right">{i + 1}★</span>
@@ -341,7 +344,7 @@ const ProfilePage = () => {
           onClick={() => setShowStats(!showStats)}
           className="mb-4 text-sm text-green-400 hover:underline"
         >
-          {showStats ? '↑ Esconder Estatísticas' : '📊 Ver Estatísticas'}
+          {showStats ? t('profile.hideStats') : t('profile.showStats')}
         </button>
       )}
 
@@ -373,7 +376,7 @@ const ProfilePage = () => {
               : reviews.map(r => renderApiReview(r))
           ) : (
             <p className="text-muted-foreground col-span-full text-center py-8">
-              {isOwnProfile ? 'Você ainda não fez nenhum review.' : 'Este usuário ainda não fez reviews.'}
+              {isOwnProfile ? t('profile.noReviewsOwn') : t('profile.noReviewsOther')}
             </p>
           )}
         </div>
@@ -385,7 +388,7 @@ const ProfilePage = () => {
             lists.map(l => renderListCard(l))
           ) : (
             <p className="text-muted-foreground col-span-full text-center py-8">
-              {isOwnProfile ? 'Você ainda não criou nenhuma lista.' : 'Este usuário não tem listas públicas.'}
+              {isOwnProfile ? t('profile.noListsOwn') : t('profile.noListsOther')}
             </p>
           )}
         </div>
@@ -397,7 +400,7 @@ const ProfilePage = () => {
             userFavorites.map((item, i) => renderLocalReview(item, i))
           ) : (
             <p className="text-muted-foreground col-span-full text-center py-8">
-              Você ainda não adicionou nenhum favorito.
+              {t('profile.noFavorites')}
             </p>
           )}
         </div>
@@ -409,7 +412,7 @@ const ProfilePage = () => {
             userWatchlist.map((item, i) => renderLocalReview(item, i))
           ) : (
             <p className="text-muted-foreground col-span-full text-center py-8">
-              Sua lista "Quero Ouvir" está vazia.
+              {t('profile.emptyWatchlist')}
             </p>
           )}
         </div>

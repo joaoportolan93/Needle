@@ -3,18 +3,16 @@ import { Link } from 'react-router-dom';
 import { Plus, Heart, ChevronLeft, ChevronRight, Music, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getPublicLists, getUserLists, createList } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 // ===================== List Card Component =====================
-// Renders a 2x2 album cover grid with item count badge, title, description, and user avatar
-
 const ListCard = ({ list }) => {
-  // Get up to 4 covers for the grid
+  const { t } = useTranslation();
   const covers = (list.items || [])
     .slice(0, 4)
     .map(item => item.album?.cover_url)
     .filter(Boolean);
 
-  // Fill remaining slots with placeholder gradient
   while (covers.length < 4) {
     covers.push(null);
   }
@@ -52,7 +50,7 @@ const ListCard = ({ list }) => {
         </div>
         {/* Item count badge */}
         <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-2 py-0.5 rounded-md">
-          {list.items_count} itens
+          {list.items_count} {t('lists.items')}
         </div>
       </div>
 
@@ -82,7 +80,7 @@ const ListCard = ({ list }) => {
           </div>
         )}
         <span className="text-[10px] text-muted-foreground">
-          {list.user?.username || 'Anônimo'}
+          {list.user?.username || t('lists.anonymous')}
         </span>
       </div>
     </Link>
@@ -91,7 +89,6 @@ const ListCard = ({ list }) => {
 
 
 // ===================== Horizontal Scroll Section =====================
-
 const ScrollSection = ({ title, lists, rightLabel, onRightClick }) => {
   const scrollRef = useRef(null);
 
@@ -155,12 +152,12 @@ const ScrollSection = ({ title, lists, rightLabel, onRightClick }) => {
 
 
 // ===================== Create List Modal =====================
-
 const CreateListModal = ({ isOpen, onClose, onCreated }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -188,26 +185,26 @@ const CreateListModal = ({ isOpen, onClose, onCreated }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
-        <h2 className="text-xl font-bold text-foreground mb-4">Criar Nova Lista</h2>
+        <h2 className="text-xl font-bold text-foreground mb-4">{t('lists.createListTitle')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Título</label>
+            <label className="text-sm text-muted-foreground mb-1 block">{t('lists.titleLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Top Álbuns de 2024"
+              placeholder={t('lists.titlePlaceholder')}
               className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
               maxLength={200}
               required
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Descrição (opcional)</label>
+            <label className="text-sm text-muted-foreground mb-1 block">{t('lists.descriptionLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Do que se trata essa lista?"
+              placeholder={t('lists.descriptionPlaceholder')}
               rows={3}
               className="w-full p-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
             />
@@ -219,7 +216,7 @@ const CreateListModal = ({ isOpen, onClose, onCreated }) => {
               onChange={(e) => setIsPublic(e.target.checked)}
               className="w-4 h-4 accent-green-500 rounded"
             />
-            Lista pública (visível para todos)
+            {t('lists.publicList')}
           </label>
           <div className="flex gap-3 pt-2">
             <button
@@ -227,7 +224,7 @@ const CreateListModal = ({ isOpen, onClose, onCreated }) => {
               onClick={onClose}
               className="flex-1 py-2.5 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-colors"
             >
-              Cancelar
+              {t('lists.cancel')}
             </button>
             <button
               type="submit"
@@ -235,7 +232,7 @@ const CreateListModal = ({ isOpen, onClose, onCreated }) => {
               className="flex-1 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-              Criar
+              {t('lists.create')}
             </button>
           </div>
         </form>
@@ -246,13 +243,13 @@ const CreateListModal = ({ isOpen, onClose, onCreated }) => {
 
 
 // ===================== Main Lists Page =====================
-
 const ListsPage = () => {
   const { user } = useAuth();
   const [myLists, setMyLists] = useState([]);
   const [communityLists, setCommunityLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -293,14 +290,14 @@ const ListsPage = () => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Minhas Listas</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('lists.myLists')}</h1>
         {user && (
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 text-white font-semibold text-sm hover:bg-green-500 transition-colors shadow-lg hover:shadow-green-500/20"
           >
             <Plus size={16} />
-            Criar Nova Lista
+            {t('lists.createNewList')}
           </button>
         )}
       </div>
@@ -308,7 +305,7 @@ const ListsPage = () => {
       {/* Section: My Lists */}
       {user && myLists.length > 0 && (
         <ScrollSection
-          title="Listas que Você Criou"
+          title={t('lists.listsYouCreated')}
           lists={myLists}
         />
       )}
@@ -316,17 +313,17 @@ const ListsPage = () => {
       {/* Section: Empty state for your lists */}
       {user && myLists.length === 0 && (
         <section className="mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-foreground mb-3">Listas que Você Criou</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground mb-3">{t('lists.listsYouCreated')}</h2>
           <div className="bg-card border border-border border-dashed rounded-xl p-8 text-center">
             <Music size={32} className="mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground text-sm">
-              Você ainda não criou nenhuma lista.
+              {t('lists.noListsYet')}
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="mt-3 text-green-400 text-sm hover:underline"
             >
-              Criar sua primeira lista →
+              {t('lists.createFirstList')}
             </button>
           </div>
         </section>
@@ -334,18 +331,18 @@ const ListsPage = () => {
 
       {/* Section: Community Popular Lists */}
       <ScrollSection
-        title="Listas Populares da Comunidade"
+        title={t('lists.communityPopular')}
         lists={communityLists}
-        rightLabel="Ver mais"
+        rightLabel={t('lists.seeMore')}
       />
 
       {/* If no community lists exist either */}
       {communityLists.length === 0 && (
         <section className="mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-foreground mb-3">Listas da Comunidade</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground mb-3">{t('lists.communityLists')}</h2>
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <p className="text-muted-foreground text-sm">
-              Nenhuma lista pública encontrada. Seja o primeiro a criar uma!
+              {t('lists.noCommunityLists')}
             </p>
           </div>
         </section>

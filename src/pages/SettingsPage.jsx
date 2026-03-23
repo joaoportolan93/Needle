@@ -10,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { toast } from 'sonner';
 import { Upload, Link as LinkIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const SettingsPage = () => {
     const { user, updateUser } = useAuth();
@@ -17,6 +19,7 @@ const SettingsPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef(null);
     const avatarUrl = watch('avatar_url');
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (user) {
@@ -32,13 +35,13 @@ const SettingsPage = () => {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            toast.error("Por favor, selecione um arquivo de imagem.");
+            toast.error(t('settings.invalidImage'));
             return;
         }
 
         // Validate file size (max 2MB)
         if (file.size > 2 * 1024 * 1024) {
-            toast.error("A imagem deve ter no máximo 2MB.");
+            toast.error(t('settings.imageTooLarge'));
             return;
         }
 
@@ -54,25 +57,25 @@ const SettingsPage = () => {
         try {
             await updateUserSettings(data);
             updateUser(data);
-            toast.success("Perfil atualizado com sucesso!");
+            toast.success(t('settings.successMessage'));
         } catch (error) {
-            toast.error("Falha ao atualizar perfil.");
+            toast.error(t('settings.errorMessage'));
             console.error(error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!user) return <div className="p-8 text-center text-foreground">Carregando configurações...</div>;
+    if (!user) return <div className="p-8 text-center text-foreground">{t('settings.loading')}</div>;
 
     return (
         <div className="container mx-auto py-10 max-w-2xl px-4">
-            <h1 className="text-3xl font-bold mb-8 text-foreground">Configurações da Conta</h1>
+            <h1 className="text-3xl font-bold mb-8 text-foreground">{t('settings.title')}</h1>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Informações do Perfil</CardTitle>
-                    <CardDescription>Atualize suas informações e preferências.</CardDescription>
+                    <CardTitle>{t('settings.profileInfo')}</CardTitle>
+                    <CardDescription>{t('settings.updateInfo')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -91,11 +94,11 @@ const SettingsPage = () => {
                                 <div className="space-y-1">
                                     <Label htmlFor="avatar_url" className="flex items-center gap-1.5">
                                         <LinkIcon size={14} />
-                                        URL da Imagem
+                                        {t('settings.imageUrl')}
                                     </Label>
                                     <Input
                                         id="avatar_url"
-                                        placeholder="https://exemplo.com/avatar.jpg"
+                                        placeholder={t('settings.imageUrlPlaceholder')}
                                         {...register('avatar_url')}
                                     />
                                 </div>
@@ -117,47 +120,54 @@ const SettingsPage = () => {
                                         className="gap-2"
                                     >
                                         <Upload size={14} />
-                                        Escolher da galeria
+                                        {t('settings.chooseFromGallery')}
                                     </Button>
                                 </div>
                             </div>
                         </div>
                         <p className="text-xs text-muted-foreground -mt-2">
-                            Cole o link de uma imagem ou GIF da internet, ou se preferir, envie uma foto personalizada do seu computador.
+                            {t('settings.imageHelp')}
                         </p>
 
                         <div className="space-y-2">
-                            <Label htmlFor="bio">Bio</Label>
+                            <Label htmlFor="bio">{t('settings.bio')}</Label>
                             <Textarea
                                 id="bio"
-                                placeholder="Conte-nos sobre seus gostos musicais..."
+                                placeholder={t('settings.bioPlaceholder')}
                                 className="resize-none h-32"
                                 {...register('bio')}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="theme_preference">Preferência de Tema</Label>
+                            <Label htmlFor="theme_preference">{t('settings.themePreference')}</Label>
                             <Controller
                                 control={control}
                                 name="theme_preference"
                                 render={({ field }) => (
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Selecione um tema" />
+                                            <SelectValue placeholder={t('settings.selectTheme')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="light">☀️ Claro</SelectItem>
-                                            <SelectItem value="dark">🌙 Escuro</SelectItem>
+                                            <SelectItem value="light">{t('settings.lightTheme')}</SelectItem>
+                                            <SelectItem value="dark">{t('settings.darkTheme')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 )}
                             />
                         </div>
 
+                        {/* Language Section */}
+                        <div className="space-y-2">
+                            <Label>{t('settings.language')}</Label>
+                            <p className="text-xs text-muted-foreground mb-2">{t('settings.languageDescription')}</p>
+                            <LanguageSwitcher />
+                        </div>
+
                         <div className="flex justify-end pt-4">
                             <Button type="submit" disabled={isLoading || !isDirty}>
-                                {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                                {isLoading ? t('settings.saving') : t('settings.saveChanges')}
                             </Button>
                         </div>
                     </form>

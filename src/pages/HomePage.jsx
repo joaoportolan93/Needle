@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getSpotifyNewReleases, getSpotifyCategories } from '../services/api';
 import { Star, ChevronRight, ThumbsUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Carousel,
   CarouselContent,
@@ -16,6 +17,7 @@ const HomePage = () => {
   const [newReleases, setNewReleases] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -72,18 +74,18 @@ const HomePage = () => {
           {/* Text */}
           <div className="flex-1 z-10 text-center lg:text-left">
             <h1 className="text-3xl lg:text-4xl font-extrabold text-foreground leading-tight mb-2">
-              Ouça, descubra <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">e compartilhe!</span>
+              {t('home.heroTitle1')} <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">{t('home.heroTitle2')}</span>
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto lg:mx-0 leading-relaxed">
-              Inspirado em um site de filmes e alguns outros de músicas, Needle é a mais nova plataforma onde você pode escrever suas reviews de forma profissional (ou não) sobre álbuns, músicas e artistas! Venha fazer parte da comunidade!
+              {t('home.heroDescription')}
             </p>
             <div className="flex gap-3 mt-4 justify-center lg:justify-start">
               <Link to="/search" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                Explorar Músicas
+                {t('home.exploreMusic')}
               </Link>
               <Link to="/profile" className="px-4 py-2 border border-border hover:bg-accent text-sm font-semibold rounded-lg transition-colors">
-                Meu Perfil
+                {t('home.myProfile')}
               </Link>
             </div>
           </div>
@@ -105,9 +107,9 @@ const HomePage = () => {
           {/* New Releases */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-foreground">Novos Lançamentos</h2>
+              <h2 className="text-lg font-bold text-foreground">{t('home.newReleases')}</h2>
               <Link to="/search?type=album" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5">
-                Ver mais <ChevronRight size={14} />
+                {t('home.seeMore')} <ChevronRight size={14} />
               </Link>
             </div>
             <Carousel className="w-full">
@@ -141,8 +143,8 @@ const HomePage = () => {
           {/* Community Feed */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-foreground">Feed da Comunidade</h2>
-              <Link to="/feed" className="text-xs text-green-400 hover:text-green-300">Ver mais</Link>
+              <h2 className="text-lg font-bold text-foreground">{t('home.communityFeed')}</h2>
+              <Link to="/feed" className="text-xs text-green-400 hover:text-green-300">{t('home.seeMore')}</Link>
             </div>
             <ActivityFeed />
           </section>
@@ -152,8 +154,8 @@ const HomePage = () => {
         <div className="space-y-6">
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-foreground">Explorar por Gênero</h2>
-              <Link to="/search" className="text-xs text-green-400 hover:text-green-300">Ver mais</Link>
+              <h2 className="text-lg font-bold text-foreground">{t('home.exploreByGenre')}</h2>
+              <Link to="/search" className="text-xs text-green-400 hover:text-green-300">{t('home.seeMore')}</Link>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {categories.map((cat, idx) => (

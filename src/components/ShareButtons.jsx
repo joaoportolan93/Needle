@@ -1,6 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ShareButtons = ({ title, description, url }) => {
+  const { t } = useTranslation();
+
   // Função para criar URLs de compartilhamento
   const shareUrls = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(description)}&url=${encodeURIComponent(url)}`,
@@ -13,7 +16,7 @@ const ShareButtons = ({ title, description, url }) => {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(url)
       .then(() => {
-        alert('Link copiado para a área de transferência!');
+        alert(t('share.linkCopied'));
       })
       .catch(err => {
         console.error('Erro ao copiar: ', err);
@@ -54,10 +57,10 @@ const ShareButtons = ({ title, description, url }) => {
         onClick={copyToClipboard}
         className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-sm flex items-center"
       >
-        <span>Copiar Link</span>
+        <span>{t('share.copyLink')}</span>
       </button>
     </div>
   );
 };
 
-export default ShareButtons; 
+export default ShareButtons;

@@ -129,7 +129,14 @@ async def refresh_covers():
                             .update({"album_spotify_id": new_id})
                         )
 
-                        print(f"  FIXED: {album.name} (id: {old_id[:8]}→{new_id[:8]}, {review_count} reviews)")
+                        # Also update all list items that reference the old ID
+                        list_item_count = (
+                            db.query(models.ListItem)
+                            .filter(models.ListItem.album_spotify_id == old_id)
+                            .update({"album_spotify_id": new_id})
+                        )
+
+                        print(f"  FIXED: {album.name} (id: {old_id[:8]}→{new_id[:8]}, {review_count} reviews, {list_item_count} list items)")
                         updated += 1
                     else:
                         print(f"  FAILED: {album.name}")

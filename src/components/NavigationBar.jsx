@@ -2,11 +2,14 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Search, PlusSquare, List, User, Settings, LogOut, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import LanguageSwitcher from './LanguageSwitcher';
 
 const NavigationBar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogout = () => {
     logout();
@@ -14,15 +17,14 @@ const NavigationBar = () => {
   };
 
   const navItems = [
-    { path: '/', label: 'Início', icon: <Home size={24} /> },
-    { path: '/search', label: 'Explorar', icon: <Search size={24} /> },
-    { path: '/add', label: 'Adicionar', icon: <PlusSquare size={24} /> },
-    { path: '/lists', label: 'Listas', icon: <List size={24} /> },
+    { path: '/', label: t('nav.home'), icon: <Home size={24} /> },
+    { path: '/search', label: t('nav.explore'), icon: <Search size={24} /> },
+    { path: '/lists', label: t('nav.lists'), icon: <List size={24} /> },
   ];
 
   if (user) {
-    navItems.push({ path: '/profile', label: 'Perfil', icon: <User size={24} /> });
-    navItems.push({ path: '/settings', label: 'Configurações', icon: <Settings size={24} /> });
+    navItems.push({ path: '/profile', label: t('nav.profile'), icon: <User size={24} /> });
+    navItems.push({ path: '/settings', label: t('nav.settings'), icon: <Settings size={24} /> });
   }
 
   return (
@@ -54,7 +56,10 @@ const NavigationBar = () => {
           </ul>
         </div>
 
-        <div className="pt-4 border-t border-border">
+        <div className="pt-4 border-t border-border space-y-2">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {user ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 px-2 text-sm text-muted-foreground">
@@ -69,7 +74,7 @@ const NavigationBar = () => {
                 className="flex items-center space-x-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 w-full text-left"
               >
                 <LogOut size={24} />
-                <span className="text-sm font-medium">Sair</span>
+                <span className="text-sm font-medium">{t('nav.logout')}</span>
               </button>
             </div>
           ) : (
@@ -78,7 +83,7 @@ const NavigationBar = () => {
               className="flex items-center space-x-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
             >
               <LogIn size={24} />
-              <span className="text-sm font-medium">Entrar</span>
+              <span className="text-sm font-medium">{t('nav.login')}</span>
             </NavLink>
           )}
         </div>
@@ -114,7 +119,7 @@ const NavigationBar = () => {
                `}
               >
                 <LogIn size={22} />
-                <span className="text-[10px] mt-1 font-medium">Entrar</span>
+                <span className="text-[10px] mt-1 font-medium">{t('nav.login')}</span>
               </NavLink>
             </li>
           )}

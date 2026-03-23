@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Heart, MessageCircle, Clock, Bookmark, Music } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from 'react-i18next';
 
 const ReviewCard = ({ activity }) => {
     const [imgError, setImgError] = useState(false);
+    const { t } = useTranslation();
     const {
         type,
         itemId,
@@ -48,11 +50,11 @@ const ReviewCard = ({ activity }) => {
         borderClass = 'border-l-4 border-l-green-500';
     } else if (type === 'watchlist') {
         borderClass = 'border-l-4 border-l-blue-500';
-        actionText = "Adicionou à lista 'Quero Ouvir'";
+        actionText = t('activity.addedToWatchlist');
         ActionIcon = Clock;
     } else if (type === 'favorite') {
         borderClass = 'border-l-4 border-l-pink-500';
-        actionText = "Adicionou aos Favoritos";
+        actionText = t('activity.addedToFavorites');
         ActionIcon = Heart;
     }
 
@@ -99,7 +101,7 @@ const ReviewCard = ({ activity }) => {
                             <AvatarImage src={user?.avatar || user?.avatar_url} />
                             <AvatarFallback className="text-[9px] bg-indigo-900 text-indigo-100">U</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-foreground/80 hover:text-green-400 transition-colors">{user?.username || user?.name || 'Usuário'}</span>
+                        <span className="font-semibold text-foreground/80 hover:text-green-400 transition-colors">{user?.username || user?.name || t('activity.user')}</span>
                     </Link>
 
                     {/* Action Text for non-reviews */}

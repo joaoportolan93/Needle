@@ -9,6 +9,7 @@ from typing import List
 from database import get_db
 from auth import get_current_user, get_current_user_optional
 import models, schemas
+from spotify_service import spotify_service
 
 router = APIRouter(prefix="/api/lists", tags=["Lists"])
 
@@ -273,6 +274,43 @@ async def add_list_item(
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Album already in this list")
+
+    # Check if album exists in the local cache
+    album = db.query(models.Album).filter(models.Album.spotify_id == item_data.album_spotify_id).first()
+    if not album:
+        try:
+            # Fetch album from Spotify and cache it
+            spotify_album = await spotify_service.get_album(item_data.album_spotify_id)
+            
+            cover_url = None
+            if spotify_album.get("images") and len(spotify_album.get("images")) > 0:
+                cover_url = spotify_album["images"][0].get("url")
+                
+            artist_name = "Artista Desconhecido"
+            if spotify_album.get("artists") and len(spotify_album.get("artists")) > 0:
+                artist_name = spotify_album["artists"][0].get("name", artist_name)
+                
+            album = models.Album(
+                spotify_id=item_data.album_spotify_id,
+                name=spotify_album.get("name", "Álbum Desconhecido"),
+                artist_name=artist_name,
+                cover_url=cover_url,
+                release_date=spotify_album.get("release_date")
+            )
+            db.add(album)
+            db.commit()
+            db.refresh(album)
+        except Exception as e:
+            # If Spotify API fails, add a placeholder to satisfy the foreign key constraint
+            album = models.Album(
+                spotify_id=item_data.album_spotify_id,
+                name="Álbum Desconhecido",
+                artist_name="Artista Desconhecido",
+                cover_url=None
+            )
+            db.add(album)
+            db.commit()
+            db.refresh(album)
 
     db_item = models.ListItem(
         list_id=list_id,

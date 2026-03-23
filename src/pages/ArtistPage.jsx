@@ -85,13 +85,13 @@ const ArtistPage = () => {
             <p className="text-muted-foreground mb-2">Gêneros: {artist.genres.join(', ')}</p>
           )}
           <p className="text-muted-foreground mb-4">
-            Popularidade: {artist.popularity}/100
+            Popularidade: {artist.popularity || 0}/100
           </p>
           <p className="text-muted-foreground mb-4">
-            Seguidores: {artist.followers.total.toLocaleString()}
+            Seguidores: {(artist.followers?.total || 0).toLocaleString()}
           </p>
           <a
-            href={artist.external_urls.spotify}
+            href={artist.external_urls?.spotify || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
@@ -122,7 +122,7 @@ const ArtistPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center">
                         <img
-                          src={track.album.images[2]?.url || `https://via.placeholder.com/40`}
+                          src={track.album?.images?.[2]?.url || `https://via.placeholder.com/40`}
                           alt={track.name}
                           className="w-10 h-10 mr-3 rounded"
                         />
@@ -132,8 +132,8 @@ const ArtistPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      <Link to={`/item/${track.album.id}`} className="hover:underline">
-                        {track.album.name}
+                      <Link to={`/item/${track.album?.id}`} className="hover:underline">
+                        {track.album?.name || 'Álbum Desconhecido'}
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDuration(track.duration_ms)}</td>
@@ -157,13 +157,13 @@ const ArtistPage = () => {
                 <div className="bg-card p-3 rounded-lg shadow-lg transition duration-300 hover:bg-accent border border-border">
                   <div className="mb-3">
                     <img
-                      src={album.images[0]?.url || `https://via.placeholder.com/300`}
+                      src={album.images?.[0]?.url || `https://via.placeholder.com/300`}
                       alt={album.name}
                       className="w-full aspect-square object-cover rounded-md shadow-md"
                     />
                   </div>
                   <h3 className="font-medium text-sm group-hover:text-green-400 truncate">{album.name}</h3>
-                  <p className="text-xs text-muted-foreground">{album.release_date.split('-')[0]} • {album.album_type}</p>
+                  <p className="text-xs text-muted-foreground">{album.release_date?.split('-')[0] || 'Data desconhecida'} • {album.album_type}</p>
                 </div>
               </Link>
             ))}

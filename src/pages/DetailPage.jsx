@@ -4,12 +4,14 @@ import { getSpotifyAlbumDetails, getSpotifyArtistDetails, getSpotifyTrackDetails
 import ShareButtons from '../components/ShareButtons';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2, Plus, Music } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const DetailPage = () => {
   const { id, type = 'album' } = useParams();
   const [itemDetails, setItemDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useTranslation();
 
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -26,10 +28,10 @@ const DetailPage = () => {
   const [isLoadingLists, setIsLoadingLists] = useState(false);
   const [addingToListId, setAddingToListId] = useState(null);
 
-  const predefinedTags = [
-    "Relaxante", "Enérgico", "Melancólico", "Feliz", "Nostálgico", "Dançante",
-    "Instrumental", "Acústico", "Eletrônico", "Jazz", "Rock", "Pop", "Hip-Hop",
-    "Clássico", "Indie", "Folk", "R&B", "Soul", "Metal", "Alternativo"
+  const predefinedTagKeys = [
+    "relaxing", "energetic", "melancholic", "happy", "nostalgic", "danceable",
+    "instrumental", "acoustic", "electronic", "jazz", "rock", "pop", "hiphop",
+    "classic", "indie", "folk", "rnb", "soul", "metal", "alternative"
   ];
 
   useEffect(() => {
@@ -44,7 +46,7 @@ const DetailPage = () => {
         } else if (type === 'track') {
           data = await getSpotifyTrackDetails(id);
         } else {
-          throw new Error('Tipo de item desconhecido.');
+          throw new Error(t('detail.unknownType'));
         }
         setItemDetails(data);
         loadReviews(id);
@@ -63,7 +65,7 @@ const DetailPage = () => {
     const allReviews = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('sonora-review-')) {
+      if (key && key.startsWith('needle-review-')) {
         try {
           const reviewData = JSON.parse(localStorage.getItem(key));
           if (reviewData && reviewData.itemId === itemId) allReviews.push(reviewData);
@@ -76,7 +78,7 @@ const DetailPage = () => {
   };
 
   const loadUserReview = (itemId) => {
-    const reviewKey = `sonora-review-${itemId}`;
+    const reviewKey = `needle-review-${itemId}`;
     const savedReview = localStorage.getItem(reviewKey);
     if (savedReview) {
       try {
@@ -93,7 +95,7 @@ const DetailPage = () => {
 
   const saveReview = () => {
     if (userRating === 0) {
-      alert('Por favor, dê uma avaliação em estrelas antes de salvar.');
+      alert(t('detail.alertRating'));
       return;
     }
     const reviewData = {
@@ -113,20 +115,20 @@ const DetailPage = () => {
       tags: selectedTags,
       date: new Date().toISOString()
     };
-    const reviewKey = `sonora-review-${id}`;
+    const reviewKey = `needle-review-${id}`;
     localStorage.setItem(reviewKey, JSON.stringify(reviewData));
     loadReviews(id);
     setShowReviewForm(false);
-    const userReviewsKey = 'sonora-user-reviews';
+    const userReviewsKey = 'needle-user-reviews';
     let userReviews = JSON.parse(localStorage.getItem(userReviewsKey) || '[]');
     userReviews = userReviews.filter(rev => rev.itemId !== id);
     userReviews.push({ id: reviewData.id, itemId: id, itemType: type, itemName: itemDetails.name, rating: userRating, date: new Date().toISOString() });
     localStorage.setItem(userReviewsKey, JSON.stringify(userReviews));
-    alert('Sua avaliação foi salva com sucesso!');
+    alert(t('detail.alertSaved'));
   };
 
   const addToFavorites = () => {
-    const favoritesKey = 'sonora-favorites';
+    const favoritesKey = 'needle-favorites';
     let favorites = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
     if (!favorites.some(fav => fav.id === id)) {
       favorites.push({
@@ -136,14 +138,14 @@ const DetailPage = () => {
         addedAt: new Date().toISOString()
       });
       localStorage.setItem(favoritesKey, JSON.stringify(favorites));
-      alert('Adicionado aos favoritos!');
+      alert(t('detail.alertAddedFav'));
     } else {
-      alert('Este item já está nos seus favoritos!');
+      alert(t('detail.alertAlreadyFav'));
     }
   };
 
   const addToWatchlist = () => {
-    const watchlistKey = 'sonora-watchlist';
+    const watchlistKey = 'needle-watchlist';
     let watchlist = JSON.parse(localStorage.getItem(watchlistKey) || '[]');
     if (!watchlist.some(item => item.id === id)) {
       watchlist.push({
@@ -153,15 +155,15 @@ const DetailPage = () => {
         addedAt: new Date().toISOString()
       });
       localStorage.setItem(watchlistKey, JSON.stringify(watchlist));
-      alert('Adicionado à sua lista "Quero Ouvir"!');
+      alert(t('detail.alertAddedWatchlist'));
     } else {
-      alert('Este item já está na sua lista "Quero Ouvir"!');
+      alert(t('detail.alertAlreadyWatchlist'));
     }
   };
 
   const handleOpenListModal = async () => {
     if (!user) {
-      alert('Faça login para adicionar álbuns a uma lista.');
+      alert(t('detail.alertLoginRequired'));
       return;
     }
     setShowListModal(true);
@@ -183,14 +185,14 @@ const DetailPage = () => {
     setAddingToListId(listId);
     try {
       await addListItem(listId, { album_spotify_id: id });
-      alert('Álbum adicionado à lista com sucesso!');
+      alert(t('detail.alertAddedToList'));
       setShowListModal(false);
     } catch (err) {
       console.error('Erro ao adicionar item à lista:', err);
       if (err.message && err.message.includes('already in this list')) {
-         alert('Este álbum já está na lista.');
+         alert(t('detail.alertAlreadyInList'));
       } else {
-         alert('Ocorreu um erro ao adicionar à lista. Tente novamente.');
+         alert(t('detail.alertListError'));
       }
     } finally {
       setAddingToListId(null);
@@ -216,7 +218,7 @@ const DetailPage = () => {
   if (isLoading) {
     return (
       <div className="p-4 text-center">
-        <p className="text-xl text-foreground">Carregando detalhes...</p>
+        <p className="text-xl text-foreground">{t('detail.loading')}</p>
       </div>
     );
   }
@@ -226,19 +228,19 @@ const DetailPage = () => {
     if (errorLowerCase.includes('resource not found') || errorLowerCase.includes('não encontrado')) {
       return (
         <div className="p-4 text-center">
-          <p className="text-xl text-red-500 mb-4">Este item não foi encontrado no Spotify</p>
-          <p className="text-muted-foreground mb-6">Pode ser que este álbum, artista ou música tenha sido removido do catálogo ou não esteja disponível na sua região.</p>
+          <p className="text-xl text-red-500 mb-4">{t('detail.notFoundTitle')}</p>
+          <p className="text-muted-foreground mb-6">{t('detail.notFoundDescription')}</p>
           <Link to="/search" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-            Voltar para a Busca
+            {t('detail.backToSearch')}
           </Link>
         </div>
       );
     }
     return (
       <div className="p-4 text-center">
-        <p className="text-xl text-red-500">Erro ao carregar detalhes: {error}</p>
+        <p className="text-xl text-red-500">{t('detail.errorLoading', { error })}</p>
         <Link to="/search" className="text-blue-500 hover:underline mt-4 inline-block">
-          Voltar para a Busca
+          {t('detail.backToSearch')}
         </Link>
       </div>
     );
@@ -247,9 +249,9 @@ const DetailPage = () => {
   if (!itemDetails) {
     return (
       <div className="p-4 text-center">
-        <p className="text-xl text-foreground">Nenhum detalhe encontrado.</p>
+        <p className="text-xl text-foreground">{t('detail.noDetailsFound')}</p>
         <Link to="/search" className="text-blue-500 hover:underline mt-4 inline-block">
-          Voltar para a Busca
+          {t('detail.backToSearch')}
         </Link>
       </div>
     );
@@ -262,7 +264,7 @@ const DetailPage = () => {
   return (
     <div className="p-4 max-w-6xl mx-auto text-foreground">
       <Link to="/search" className="text-blue-500 hover:underline mb-6 inline-block">
-        &larr; Voltar para a Busca
+        &larr; {t('detail.backToSearch')}
       </Link>
 
       {/* Detalhes do Item */}
@@ -284,32 +286,32 @@ const DetailPage = () => {
               rel="noopener noreferrer"
               className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center"
             >
-              Abrir no Spotify
+              {t('detail.openOnSpotify')}
             </a>
             <button
               onClick={addToFavorites}
               className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded flex items-center justify-center"
             >
-              <span>♥ Adicionar aos Favoritos</span>
+              <span>{t('detail.addToFavorites')}</span>
             </button>
             <button
               onClick={addToWatchlist}
               className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded flex items-center justify-center"
             >
-              <span>➕ Adicionar à lista "Quero Ouvir"</span>
+              <span>{t('detail.addToWatchlist')}</span>
             </button>
             <button
               onClick={handleOpenListModal}
               className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded flex items-center justify-center gap-2"
             >
               <Plus size={18} />
-              <span>Adicionar a uma Lista</span>
+              <span>{t('detail.addToList')}</span>
             </button>
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center"
             >
-              <span>{showReviewForm ? 'Cancelar Avaliação' : 'Avaliar este item'}</span>
+              <span>{showReviewForm ? t('detail.cancelReview') : t('detail.rateThisItem')}</span>
             </button>
           </div>
         </div>
@@ -326,20 +328,20 @@ const DetailPage = () => {
               </p>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <p className="text-muted-foreground">Data de Lançamento</p>
+                  <p className="text-muted-foreground">{t('detail.releaseDate')}</p>
                   <p>{new Date(itemDetails.release_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Total de Faixas</p>
+                  <p className="text-muted-foreground">{t('detail.totalTracks')}</p>
                   <p>{itemDetails.total_tracks}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Popularidade</p>
+                  <p className="text-muted-foreground">{t('detail.popularity')}</p>
                   <p>{itemDetails.popularity}/100</p>
                 </div>
                 {averageRating && (
                   <div>
-                    <p className="text-muted-foreground">Avaliação da Comunidade</p>
+                    <p className="text-muted-foreground">{t('detail.communityRating')}</p>
                     <p className="text-yellow-400">
                       {'★'.repeat(Math.floor(averageRating))}
                       {averageRating % 1 >= 0.5 ? '½' : ''}
@@ -352,7 +354,7 @@ const DetailPage = () => {
 
               {/* Lista de Faixas */}
               <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-3 border-b border-border pb-2">Faixas</h2>
+                <h2 className="text-xl font-semibold mb-3 border-b border-border pb-2">{t('detail.tracks')}</h2>
                 <div className="overflow-y-auto max-h-[400px] pr-2">
                   {itemDetails.tracks.items.map((track, index) => (
                     <div key={track.id} className="flex items-center py-2 border-b border-border">
@@ -376,15 +378,15 @@ const DetailPage = () => {
             <>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <p className="text-muted-foreground">Gêneros</p>
-                  <p>{itemDetails.genres.join(', ') || 'Não especificado'}</p>
+                  <p className="text-muted-foreground">{t('detail.genres')}</p>
+                  <p>{itemDetails.genres.join(', ') || t('detail.notSpecified')}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Popularidade</p>
+                  <p className="text-muted-foreground">{t('detail.popularity')}</p>
                   <p>{itemDetails.popularity}/100</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Seguidores</p>
+                  <p className="text-muted-foreground">{t('detail.followers')}</p>
                   <p>{itemDetails.followers.total.toLocaleString()}</p>
                 </div>
               </div>
@@ -394,10 +396,10 @@ const DetailPage = () => {
           {/* Formulário de Avaliação */}
           {showReviewForm && (
             <div className="mt-8 bg-card p-6 rounded-lg border border-border">
-              <h2 className="text-xl font-semibold mb-4">Avaliar {itemDetails.name}</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('detail.rate', { name: itemDetails.name })}</h2>
 
               <div className="mb-4">
-                <label className="block text-muted-foreground mb-2">Sua Avaliação:</label>
+                <label className="block text-muted-foreground mb-2">{t('detail.yourRating')}</label>
                 <div className="flex text-3xl text-yellow-400 mb-2">
                   {[1, 2, 3, 4, 5].map(star => (
                     <button
@@ -412,7 +414,7 @@ const DetailPage = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-muted-foreground mb-2">Data em que ouviu:</label>
+                <label className="block text-muted-foreground mb-2">{t('detail.listenDate')}</label>
                 <input
                   type="date"
                   value={listenDate}
@@ -422,30 +424,33 @@ const DetailPage = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-muted-foreground mb-2">Seu Review:</label>
+                <label className="block text-muted-foreground mb-2">{t('detail.yourReview')}</label>
                 <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Escreva seus pensamentos sobre este álbum..."
+                  placeholder={t('detail.reviewPlaceholder')}
                   className="w-full bg-secondary border border-border rounded p-2 text-foreground h-32"
                 ></textarea>
               </div>
 
               <div className="mb-6">
-                <label className="block text-muted-foreground mb-2">Tags:</label>
+                <label className="block text-muted-foreground mb-2">{t('detail.tags')}</label>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {predefinedTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => handleTagClick(tag)}
-                      className={`px-3 py-1 rounded-full text-sm ${selectedTags.includes(tag)
-                        ? 'bg-green-600 text-white'
-                        : 'bg-secondary text-muted-foreground hover:bg-accent'
-                        }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                  {predefinedTagKeys.map(tagKey => {
+                    const tagLabel = t(`tags.${tagKey}`);
+                    return (
+                      <button
+                        key={tagKey}
+                        onClick={() => handleTagClick(tagLabel)}
+                        className={`px-3 py-1 rounded-full text-sm ${selectedTags.includes(tagLabel)
+                          ? 'bg-green-600 text-white'
+                          : 'bg-secondary text-muted-foreground hover:bg-accent'
+                          }`}
+                      >
+                        {tagLabel}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="flex">
@@ -453,7 +458,7 @@ const DetailPage = () => {
                     type="text"
                     value={customTag}
                     onChange={(e) => setCustomTag(e.target.value)}
-                    placeholder="Adicionar tag personalizada"
+                    placeholder={t('detail.addCustomTag')}
                     className="flex-1 bg-secondary border border-border rounded-l p-2 text-foreground"
                     onKeyPress={(e) => e.key === 'Enter' && addCustomTag()}
                   />
@@ -461,7 +466,7 @@ const DetailPage = () => {
                     onClick={addCustomTag}
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r"
                   >
-                    Adicionar
+                    {t('detail.addTag')}
                   </button>
                 </div>
               </div>
@@ -471,13 +476,13 @@ const DetailPage = () => {
                   onClick={() => setShowReviewForm(false)}
                   className="bg-secondary hover:bg-accent text-foreground font-bold py-2 px-4 rounded mr-2"
                 >
-                  Cancelar
+                  {t('detail.cancel')}
                 </button>
                 <button
                   onClick={saveReview}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                 >
-                  Salvar Avaliação
+                  {t('detail.saveReview')}
                 </button>
               </div>
             </div>
@@ -486,7 +491,7 @@ const DetailPage = () => {
           {/* Avaliações da Comunidade */}
           {reviews.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">Avaliações da Comunidade</h2>
+              <h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">{t('detail.communityReviews')}</h2>
 
               <div className="space-y-4">
                 {reviews.map(review => (
@@ -502,7 +507,7 @@ const DetailPage = () => {
 
                     {review.listenDate && (
                       <div className="text-sm text-muted-foreground mb-2">
-                        Ouvido em: {new Date(review.listenDate).toLocaleDateString()}
+                        {t('detail.listenedOn', { date: new Date(review.listenDate).toLocaleDateString() })}
                       </div>
                     )}
 
@@ -521,10 +526,10 @@ const DetailPage = () => {
                     )}
 
                     <div className="pt-3 border-t border-border">
-                      <p className="text-xs text-muted-foreground mb-2">Compartilhar esta avaliação:</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t('detail.shareReview')}</p>
                       <ShareButtons
                         title={`Review: ${itemDetails.name}`}
-                        description={`Confira minha avaliação de ${itemDetails.name} (${review.rating}/5 estrelas) no Sonora App!`}
+                        description={t('detail.shareDescription', { name: itemDetails.name, rating: review.rating })}
                         url={`${window.location.origin}/item/${id}?review=${review.id}`}
                       />
                     </div>
@@ -541,7 +546,7 @@ const DetailPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-xl w-full max-w-sm flex flex-col shadow-2xl max-h-[80vh]">
             <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10 rounded-t-xl">
-              <h3 className="font-bold text-lg text-foreground">Adicionar à Lista</h3>
+              <h3 className="font-bold text-lg text-foreground">{t('detail.addToListTitle')}</h3>
               <button 
                 onClick={() => setShowListModal(false)}
                 className="text-muted-foreground hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
@@ -554,17 +559,17 @@ const DetailPage = () => {
               {isLoadingLists ? (
                 <div className="flex flex-col items-center justify-center py-8">
                   <Loader2 className="animate-spin text-green-500 mb-2" size={24} />
-                  <p className="text-sm text-muted-foreground">Carregando suas listas...</p>
+                  <p className="text-sm text-muted-foreground">{t('detail.loadingLists')}</p>
                 </div>
               ) : userLists.length === 0 ? (
                 <div className="text-center py-8">
                   <Music className="mx-auto text-muted-foreground/50 mb-3" size={32} />
-                  <p className="text-sm text-muted-foreground mb-4">Você ainda não criou nenhuma lista.</p>
+                  <p className="text-sm text-muted-foreground mb-4">{t('detail.noListsYet')}</p>
                   <Link 
                     to="/lists" 
                     className="text-sm text-green-400 hover:underline font-semibold"
                   >
-                    Criar Nova Lista
+                    {t('detail.createNewList')}
                   </Link>
                 </div>
               ) : (
@@ -588,7 +593,7 @@ const DetailPage = () => {
                           {list.title}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          {list.items_count} {list.items_count === 1 ? 'item' : 'itens'} {list.is_public ? '• Pública' : '• Privada'}
+                          {list.items_count} {list.items_count === 1 ? 'item' : t('detail.itemCount_other', { count: '' }).trim()} {list.is_public ? `• ${t('detail.public')}` : `• ${t('detail.private')}`}
                         </p>
                       </div>
                       <div className="flex-shrink-0">

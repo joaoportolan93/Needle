@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { searchSpotify, getSpotifyCategories } from '../services/api';
 import { Music, TrendingUp, Globe, Flame } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,33 +12,34 @@ const SearchPage = () => {
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const { t } = useTranslation();
 
   // Curated highlight cards (playlists/charts that users can explore)
   const curatedCards = [
     {
       id: 'toplists',
-      name: 'Top 50 Brasil',
+      name: t('search.topBrasil'),
       gradient: 'from-green-500 to-green-800',
       icon: <TrendingUp size={28} />,
       searchQuery: 'Top 50 Brasil',
     },
     {
       id: 'global',
-      name: 'Top 50 Global',
+      name: t('search.topGlobal'),
       gradient: 'from-blue-500 to-indigo-800',
       icon: <Globe size={28} />,
       searchQuery: 'Top 50 Global',
     },
     {
       id: 'viral',
-      name: 'Viral Brasil',
+      name: t('search.viralBrasil'),
       gradient: 'from-orange-500 to-red-700',
       icon: <Flame size={28} />,
       searchQuery: 'Viral 50 Brasil',
     },
     {
       id: 'discover',
-      name: 'Descobertas da Semana',
+      name: t('search.weeklyDiscover'),
       gradient: 'from-purple-500 to-pink-700',
       icon: <Music size={28} />,
       searchQuery: 'Descobertas da Semana',
@@ -96,30 +98,43 @@ const SearchPage = () => {
     setDebouncedTerm(query);
   };
 
+  const filterLabels = {
+    all: t('search.all'),
+    artists: t('search.artists'),
+    albums: t('search.albums'),
+    tracks: t('search.tracks'),
+  };
+
+  const typeLabels = {
+    artists: t('search.artists'),
+    albums: t('search.albums'),
+    tracks: t('search.tracks'),
+  };
+
   const renderResults = (items, type) => {
     if (!items || items.length === 0) {
-      return <p className="text-muted-foreground mt-4">Nenhum resultado encontrado para {type}.</p>;
+      return <p className="text-muted-foreground mt-4">{t('search.noResults', { type })}</p>;
     }
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
         {items.map(item => {
-          const route = type === 'Artistas' ? `/artist/${item.id}` : `/item/${item.id}`;
+          const route = type === t('search.artists') ? `/artist/${item.id}` : `/item/${item.id}`;
           return (
             <Link to={route} key={item.id} className="bg-card p-3 rounded-lg shadow border border-border hover:bg-accent transition-colors">
               <img
                 src={item.images && item.images.length > 0 ? item.images[0].url : (item.album && item.album.images && item.album.images.length > 0 ? item.album.images[0].url : 'https://via.placeholder.com/150/14181C/E1E1E1?text=Capa')}
-                alt={`Capa de ${item.name}`}
-                className={`w-full h-40 object-cover rounded-md mb-2 ${type === 'Artistas' ? 'rounded-full' : ''}`}
+                alt={t('search.coverAlt', { name: item.name })}
+                className={`w-full h-40 object-cover rounded-md mb-2 ${type === t('search.artists') ? 'rounded-full' : ''}`}
               />
               <h3 className="text-md font-semibold truncate text-foreground">{item.name}</h3>
-              {type === 'Álbuns' && item.artists && (
+              {type === t('search.albums') && item.artists && (
                 <p className="text-xs text-muted-foreground truncate">{item.artists.map(a => a.name).join(', ')}</p>
               )}
-              {type === 'Músicas' && item.artists && (
+              {type === t('search.tracks') && item.artists && (
                 <p className="text-xs text-muted-foreground truncate">{item.artists.map(a => a.name).join(', ')}</p>
               )}
-              {type === 'Músicas' && item.album && (
-                <p className="text-xs text-muted-foreground truncate">Álbum: {item.album.name}</p>
+              {type === t('search.tracks') && item.album && (
+                <p className="text-xs text-muted-foreground truncate">{t('search.albumLabel')}: {item.album.name}</p>
               )}
               <p className="text-xs text-green-500 capitalize mt-1">{type.slice(0, -1)}</p>
             </Link>
@@ -155,12 +170,12 @@ const SearchPage = () => {
 
   return (
     <div className="p-4 max-w-6xl mx-auto text-foreground">
-      <h1 className="text-3xl font-bold mb-6 text-center">Explore Músicas, Álbuns e Artistas</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">{t('search.title')}</h1>
       <div className="mb-6">
         <input
           type="text"
           className="w-full p-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-muted-foreground"
-          placeholder="O que você quer ouvir hoje?"
+          placeholder={t('search.placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -175,31 +190,31 @@ const SearchPage = () => {
               ${activeFilter === filter ? 'bg-green-500 text-white' : 'text-muted-foreground hover:bg-accent'}
             `}
           >
-            {filter === 'all' ? 'Todos' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+            {filterLabels[filter]}
           </button>
         ))}
       </div>
 
-      {loading && <p className="text-center text-muted-foreground">Buscando...</p>}
+      {loading && <p className="text-center text-muted-foreground">{t('search.searching')}</p>}
 
       {!loading && debouncedTerm && (
         <div className="mt-4">
           {activeFilter === 'all' && (
             <>
-              {results.artists.length > 0 && <h2 className="text-xl font-semibold mt-4 mb-2">Artistas</h2>}
-              {renderResults(results.artists, 'Artistas')}
-              {results.albums.length > 0 && <h2 className="text-xl font-semibold mt-6 mb-2">Álbuns</h2>}
-              {renderResults(results.albums, 'Álbuns')}
-              {results.tracks.length > 0 && <h2 className="text-xl font-semibold mt-6 mb-2">Músicas</h2>}
-              {renderResults(results.tracks, 'Músicas')}
+              {results.artists.length > 0 && <h2 className="text-xl font-semibold mt-4 mb-2">{t('search.artists')}</h2>}
+              {renderResults(results.artists, typeLabels.artists)}
+              {results.albums.length > 0 && <h2 className="text-xl font-semibold mt-6 mb-2">{t('search.albums')}</h2>}
+              {renderResults(results.albums, typeLabels.albums)}
+              {results.tracks.length > 0 && <h2 className="text-xl font-semibold mt-6 mb-2">{t('search.tracks')}</h2>}
+              {renderResults(results.tracks, typeLabels.tracks)}
               {results.artists.length === 0 && results.albums.length === 0 && results.tracks.length === 0 && debouncedTerm.length > 1 && (
-                <p className="text-muted-foreground mt-4 text-center">Nenhum resultado encontrado para "{debouncedTerm}".</p>
+                <p className="text-muted-foreground mt-4 text-center">{t('search.noResultsFor', { term: debouncedTerm })}</p>
               )}
             </>
           )}
-          {activeFilter === 'artists' && renderResults(results.artists, 'Artistas')}
-          {activeFilter === 'albums' && renderResults(results.albums, 'Álbuns')}
-          {activeFilter === 'tracks' && renderResults(results.tracks, 'Músicas')}
+          {activeFilter === 'artists' && renderResults(results.artists, typeLabels.artists)}
+          {activeFilter === 'albums' && renderResults(results.albums, typeLabels.albums)}
+          {activeFilter === 'tracks' && renderResults(results.tracks, typeLabels.tracks)}
         </div>
       )}
 
@@ -209,7 +224,7 @@ const SearchPage = () => {
 
           {/* Curated highlights */}
           <section>
-            <h2 className="text-xl font-bold mb-4 text-foreground">🔥 Em Destaque</h2>
+            <h2 className="text-xl font-bold mb-4 text-foreground">{t('search.featured')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {curatedCards.map((card) => (
                 <button
@@ -234,7 +249,7 @@ const SearchPage = () => {
 
           {/* Spotify genre categories */}
           <section>
-            <h2 className="text-xl font-bold mb-4 text-foreground">🎵 Explorar por Gênero</h2>
+            <h2 className="text-xl font-bold mb-4 text-foreground">{t('search.exploreByGenre')}</h2>
             {categoriesLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {[...Array(10)].map((_, i) => (

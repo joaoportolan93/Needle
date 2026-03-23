@@ -95,9 +95,9 @@ async def spotify_categories(
     limit: int = Query(default=20, ge=1, le=50),
     offset: int = Query(default=0, ge=0)
 ):
-    """Get Spotify categories."""
+    """Get music genres (curated list)."""
     try:
-        result = await spotify_service.get_categories(limit, offset)
+        result = spotify_service.get_categories(limit, offset)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

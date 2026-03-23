@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage = () => {
     const { login } = useAuth();
@@ -13,6 +14,7 @@ const LoginPage = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [isLoading, setIsLoading] = useState(false);
     const [serverError, setServerError] = useState('');
+    const { t } = useTranslation();
 
     const onSubmit = async (data) => {
         setIsLoading(true);
@@ -21,7 +23,7 @@ const LoginPage = () => {
             await login(data.email, data.password);
             navigate('/');
         } catch (error) {
-            setServerError(error.message || 'Invalid email or password.');
+            setServerError(error.message || t('login.invalidCredentials'));
         } finally {
             setIsLoading(false);
         }
@@ -31,42 +33,42 @@ const LoginPage = () => {
         <div className="flex items-center justify-center min-h-screen bg-background">
             <Card className="w-[350px]">
                 <CardHeader>
-                    <CardTitle>Login</CardTitle>
-                    <CardDescription>Enter your credentials to access your account.</CardDescription>
+                    <CardTitle>{t('login.title')}</CardTitle>
+                    <CardDescription>{t('login.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <div className="grid w-full items-center gap-4">
                             <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">{t('login.email')}</Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="your@email.com"
+                                    placeholder={t('login.emailPlaceholder')}
                                     {...register('email', { required: true })}
                                 />
-                                {errors.email && <span className="text-red-500 text-xs text-left">Email is required</span>}
+                                {errors.email && <span className="text-red-500 text-xs text-left">{t('login.emailRequired')}</span>}
                             </div>
                             <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">{t('login.password')}</Label>
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="Your password"
+                                    placeholder={t('login.passwordPlaceholder')}
                                     {...register('password', { required: true })}
                                 />
-                                {errors.password && <span className="text-red-500 text-xs text-left">Password is required</span>}
+                                {errors.password && <span className="text-red-500 text-xs text-left">{t('login.passwordRequired')}</span>}
                             </div>
                             {serverError && <p className="text-red-500 text-sm text-center">{serverError}</p>}
                         </div>
                         <Button className="w-full mt-6" type="submit" disabled={isLoading}>
-                            {isLoading ? 'Logging in...' : 'Login'}
+                            {isLoading ? t('login.loggingIn') : t('login.loginButton')}
                         </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
                     <p className="text-sm text-muted-foreground">
-                        Don't have an account? <Link to="/register" className="text-primary hover:underline">Register</Link>
+                        {t('login.noAccount')} <Link to="/register" className="text-primary hover:underline">{t('login.register')}</Link>
                     </p>
                 </CardFooter>
             </Card>
