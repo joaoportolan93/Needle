@@ -24,6 +24,7 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
         ...options,
         headers: {
             'Content-Type': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true',
             ...authHeaders,
             ...options.headers,
         },
